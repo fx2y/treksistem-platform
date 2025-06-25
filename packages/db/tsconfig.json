@@ -1,0 +1,8 @@
+{
+  "extends": "@treksistem/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "include": ["src/**/*"],
+  "references": [{ "path": "../types" }]
+}

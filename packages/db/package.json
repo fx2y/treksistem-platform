@@ -2,5 +2,15 @@
   "name": "@treksistem/db",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared database client, schema, and migrations for D1."
+  "type": "module",
+  "description": "Shared database client, schema, and migrations for D1.",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@treksistem/tsconfig": "workspace:*",
+    "@treksistem/eslint-config-custom": "workspace:*"
+  }
 }

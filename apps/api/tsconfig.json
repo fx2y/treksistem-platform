@@ -1,0 +1,14 @@
+{
+  "extends": "@treksistem/tsconfig/node.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "*.ts", "*.js"],
+  "references": [
+    { "path": "../../packages/db" },
+    { "path": "../../packages/types" }
+  ]
+}

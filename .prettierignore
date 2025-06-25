@@ -1,0 +1,11 @@
+node_modules
+.pnpm-store
+dist
+build
+.next
+.turbo
+*.min.js
+*.min.css
+coverage
+.nyc_output
+pnpm-lock.yaml

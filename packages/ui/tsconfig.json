@@ -1,0 +1,10 @@
+{
+  "extends": "@treksistem/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "es6"]
+  },
+  "include": ["src/**/*"],
+  "references": [{ "path": "../types" }]
+}
