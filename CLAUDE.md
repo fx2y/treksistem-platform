@@ -66,3 +66,14 @@ Use PNPM workspace commands to work across packages:
 pnpm --filter @treksistem/api [command]    # Run command in API package
 pnpm --filter @treksistem/web [command]    # Run command in web package
 ```
+
+## API Implementation (apps/api)
+
+**Framework**: Hono.js v4+ (lightweight, 402K+ ops/sec, <100KB bundle)
+**Pattern**: Module Worker (`export default app` NOT Service Worker)
+**Base Path**: ALL routes MUST use `/api/v1` prefix
+**Config**: wrangler.toml uses `treksistem-api-mvp`, compatibility_date >=2024-12-01
+
+**ESLint Constraints**: Lint only `src/` to avoid config conflicts, ignore `.wrangler/`, `dist/`
+**TypeScript**: Include `@cloudflare/workers-types`, exclude config files from project
+**Testing**: `wrangler dev` + curl validation for both 200/404 responses

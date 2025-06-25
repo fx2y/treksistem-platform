@@ -1,0 +1,4 @@
+name = "treksistem-api-mvp"
+main = "src/index.ts"
+compatibility_date = "2025-06-25"
+minify = true

@@ -5,12 +5,19 @@
   "type": "module",
   "description": "Backend API for Treksistem (Cloudflare Worker).",
   "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "lint": "eslint src/ --cache",
+    "lint:fix": "eslint src/ --cache --fix",
     "format": "prettier --write ."
   },
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
     "@treksistem/tsconfig": "workspace:*",
-    "@treksistem/eslint-config-custom": "workspace:*"
+    "@treksistem/eslint-config-custom": "workspace:*",
+    "wrangler": "^3.96.0"
   }
 }
