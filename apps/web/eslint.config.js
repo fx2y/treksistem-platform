@@ -1,10 +1,17 @@
-import nextConfig from '@treksistem/eslint-config-custom/next';
+import nextConfig from '@treksistem/eslint-config-custom/next.js';
 
+/** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   ...nextConfig,
   {
-    rules: {
-      // Next.js-specific overrides
+    ignores: ['.next/**', 'out/**', 'build/**'],
+  },
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
 ];
