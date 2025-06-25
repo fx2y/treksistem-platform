@@ -1,0 +1,6 @@
+{
+  "name": "@treksistem/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend API for Treksistem (Cloudflare Worker)."
+}

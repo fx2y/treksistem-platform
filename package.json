@@ -1,0 +1,23 @@
+{
+  "name": "treksistem-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The root of the Treksistem MVP monorepo.",
+  "author": "Treksistem Engineering",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "//": "Root scripts will be added in subsequent specs."
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "requiredScripts": ["build", "dev"],
+    "supportedArchitectures": {
+      "os": ["win32", "darwin", "linux"],
+      "cpu": ["x64", "arm64"]
+    }
+  }
+}

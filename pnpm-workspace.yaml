@@ -1,0 +1,19 @@
+# ./pnpm-workspace.yaml
+# This file defines the monorepo structure.
+# pnpm will find and link any package with a package.json inside these directories.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# Modern pnpm workspace configuration
+# Enable advanced workspace features
+catalogs:
+  # Centralized dependency management
+  default:
+    # Core dependencies that should be consistent across packages
+    typescript: '^5.0.0'
+    '@types/node': '^20.0.0'
+
+# Workspace-level settings
+overrides:
+  # Future: Add any package overrides needed across the workspace

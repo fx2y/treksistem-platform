@@ -1,0 +1,84 @@
+# ./.gitignore
+# Dependencies and Package Manager Files
+node_modules
+.pnpm-store
+pnpm-lock.yaml
+.npmrc
+
+# Build artifacts
+.next/
+dist/
+build/
+out/
+.output/
+.nuxt/
+.turbo/
+
+# Cloudflare Workers
+.wrangler/
+wrangler.toml.local
+
+# Database and Migrations
+*.db
+*.sqlite
+*.sqlite3
+migrations/*.sql
+drizzle/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Local environment variables
+.env
+.env*.local
+.env.production
+
+# IDE and OS files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output
+.coverage
+
+# Temporary files
+.tmp/
+.temp/
+
+# ESLint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Storybook build outputs
+storybook-static
+
+.ai/
+.claude/
+.cursor/
