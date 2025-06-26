@@ -4,10 +4,21 @@
   "private": true,
   "type": "module",
   "description": "Shared TypeScript types and Zod schemas for Treksistem.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "lint": "echo 'No source files to lint yet'",
-    "lint:fix": "echo 'No source files to lint yet'",
-    "format": "prettier --write ."
+    "build": "tsc --build",
+    "dev": "tsc --build --watch",
+    "lint": "eslint src/index.ts --cache",
+    "lint:fix": "eslint src/index.ts --cache --fix",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@treksistem/tsconfig": "workspace:*",

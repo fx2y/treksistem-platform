@@ -97,6 +97,7 @@ function generateCanvasFingerprint(): string {
 /**
  * Generate WebGL fingerprint
  */
+
 function generateWebGLFingerprint(): string {
   try {
     const canvas = document.createElement('canvas')
@@ -104,16 +105,19 @@ function generateWebGLFingerprint(): string {
     
     if (!gl) return 'no-webgl'
     
-    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info') as (WebGLDebugRendererInfo & {
+      UNMASKED_VENDOR_WEBGL: number
+      UNMASKED_RENDERER_WEBGL: number
+    }) | null
     let vendor = 'unknown'
     let renderer = 'unknown'
     
     if (debugInfo) {
       try {
-        const vendorParam = gl.getParameter((debugInfo as any).UNMASKED_VENDOR_WEBGL)
-        const rendererParam = gl.getParameter((debugInfo as any).UNMASKED_RENDERER_WEBGL)
-        vendor = String(vendorParam)
-        renderer = String(rendererParam)
+        const vendorParam = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) as string
+        const rendererParam = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string
+        vendor = vendorParam || 'unknown'
+        renderer = rendererParam || 'unknown'
       } catch {
         // Use defaults
       }
