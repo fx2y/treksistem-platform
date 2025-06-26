@@ -11,6 +11,7 @@
     "lint": "pnpm --filter=@treksistem/* lint",
     "lint:fix": "pnpm --filter=@treksistem/* lint:fix",
     "format": "pnpm --filter=@treksistem/* format",
+    "test": "pnpm --filter=@treksistem/* test",
     "prepare": "husky"
   },
   "devDependencies": {

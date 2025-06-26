@@ -1,7 +1,9 @@
 {
   "extends": "@treksistem/tsconfig/base.json",
   "compilerOptions": {
-    "baseUrl": "."
+    "baseUrl": ".",
+    "composite": true,
+    "noEmit": false
   },
   "include": ["src/**/*", "*.ts", "*.js"]
 }

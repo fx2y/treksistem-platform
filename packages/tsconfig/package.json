@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "description": "Shared TypeScript configurations for the Treksistem monorepo.",
+  "scripts": {
+    "lint": "echo 'No linting needed for config package'"
+  },
   "files": [
     "base.json",
     "nextjs.json",

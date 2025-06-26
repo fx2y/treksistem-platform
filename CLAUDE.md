@@ -45,10 +45,11 @@ pnpm install          # Install all dependencies
 
 **Critical Constraints:**
 
-- ESLint flat config imports need `.js` extensions
+- ESLint flat config imports need `.js` extensions (workspace packages: `@treksistem/eslint-config-custom/next.js`)
 - Type-aware linting uses `projectService: true` + `tsconfigRootDir: import.meta.dirname`
 - All workspaces require scripts: `lint`, `lint:fix`, `format`
 - Pre-commit hooks block commits with violations, lint-staged processes only staged files
+- Next.js ESLint plugin incompatible with ESLint v9 - remove problematic rules, builds work regardless
 
 ## Working with the Monorepo
 
@@ -77,3 +78,28 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 **ESLint Constraints**: Lint only `src/` to avoid config conflicts, ignore `.wrangler/`, `dist/`
 **TypeScript**: Include `@cloudflare/workers-types`, exclude config files from project
 **Testing**: `wrangler dev` + curl validation for both 200/404 responses
+
+## Frontend Implementation (apps/web)
+
+**Framework**: Next.js 15.3 + App Router + Turbopack (973ms startup, 0ms compile)
+**Config**: Use `turbopack` NOT `experimental.turbo` (deprecated), remove `swcMinify`
+**Environment**: `NEXT_PUBLIC_API_URL` for backend connectivity, `NEXT_EXPERIMENTAL_TURBOPACK=true`
+**UI Stack**: Tailwind CSS + shadcn/ui (components.json configured, @/\* aliases)
+**API Integration**: Client-side fetch to `/api/v1/ping` with loading/error states
+**Dependencies**: Explicit `@tailwindcss/typography` install required
+
+## CI/CD Pipeline (.github/workflows/)
+
+**Setup**: PR validation (ci.yml) + main deploy (deploy.yml)
+**Caching**: `~/.pnpm-store` + `apps/web/.next/cache` with lockfile+source hash keys
+**Commands**: `pnpm lint/test/build` + `pnpm --filter @treksistem/web type-check`
+
+**Critical Fixes Applied:**
+
+- TypeScript project refs: `composite:true` + `noEmit:false` in packages/ui,types/tsconfig.json
+- ESLint imports: `.js` extensions required (`@treksistem/eslint-config-custom/base.js`)
+- Next.js ESLint: Disable `@next/next/no-duplicate-head` (ESLint v9 incompatible)
+- Script standardization: All packages need `lint/test/build` scripts (placeholders OK)
+- Next.js deploy: `output:'export'` + `trailingSlash:true` for Cloudflare Pages
+
+**Current Status**: Frontend auto-deploys, API manual. Missing: test framework, branch protection, CF secrets.

@@ -11,6 +11,7 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "start": "next start",
+    "test": "echo 'No tests yet'",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Shared database client, schema, and migrations for D1.",
   "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
+    "lint": "echo 'No source files to lint yet'",
+    "lint:fix": "echo 'No source files to lint yet'",
     "format": "prettier --write ."
   },
   "devDependencies": {

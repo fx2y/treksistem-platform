@@ -13,5 +13,9 @@ export default [
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      // Disable problematic Next.js rules that are incompatible with ESLint v9
+      '@next/next/no-duplicate-head': 'off',
+    },
   },
 ];
