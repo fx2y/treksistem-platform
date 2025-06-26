@@ -8,3 +8,6 @@ export const createDb = (d1: D1Database) => drizzle(d1, { schema });
 export * from './schema.js';
 export { schema };
 export type { D1Database };
+
+// Export seeding functions
+export { seedMasterData } from './seeds/master-data.js';

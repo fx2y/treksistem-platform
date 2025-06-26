@@ -15,7 +15,8 @@
     "test": "echo \"'test' script not applicable for @treksistem/db\"",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
-    "studio": "drizzle-kit studio"
+    "studio": "drizzle-kit studio",
+    "db:seed:master": "echo \"Note: This script requires D1Database instance. Use programmatically via seedMasterData(d1Database).\""
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241022.0",

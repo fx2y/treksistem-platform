@@ -68,6 +68,7 @@ export type SecurityEventType =
   | 'token_revocation' 
   | 'permission_denied'
   | 'suspicious_activity'
+  | 'rate_limit_hit'
 
 // Security event severity levels
 export type SecurityEventSeverity = 'info' | 'warning' | 'error' | 'critical'
@@ -114,6 +115,138 @@ export type DriverId = string & { readonly __brand: 'DriverId' }
 // Helper function to create branded DriverId
 export function createDriverId(id: string): DriverId {
   return id as DriverId
+}
+
+// Master Data Types - Branded identifiers for type safety
+export type VehicleTypeId = string & { readonly __brand: 'VehicleTypeId' }
+export type PayloadTypeId = string & { readonly __brand: 'PayloadTypeId' }
+export type FacilityId = string & { readonly __brand: 'FacilityId' }
+
+// Helper functions to create branded master data IDs
+export function createVehicleTypeId(id: string): VehicleTypeId {
+  return id as VehicleTypeId
+}
+
+export function createPayloadTypeId(id: string): PayloadTypeId {
+  return id as PayloadTypeId
+}
+
+export function createFacilityId(id: string): FacilityId {
+  return id as FacilityId
+}
+
+// Master Data Interfaces
+export interface VehicleType {
+  id: VehicleTypeId
+  publicId: string
+  name: string
+  description?: string
+  iconUrl: string
+  isActive: boolean
+  partnerId?: PartnerId // Partner-scoped or global (null)
+  displayOrder: number
+  capabilities: string[] // e.g., ["HOT_FOOD", "FROZEN_FOOD"]
+  // Audit fields
+  createdAt: Date
+  updatedAt: Date
+  createdBy: UserId
+  updatedBy: UserId
+}
+
+export interface PayloadType {
+  id: PayloadTypeId
+  publicId: string
+  name: string
+  description?: string
+  iconUrl: string
+  isActive: boolean
+  partnerId?: PartnerId // Partner-scoped or global (null)
+  displayOrder: number
+  requirements: string[] // e.g., ["TEMPERATURE_CONTROLLED", "FRAGILE"]
+  // Audit fields
+  createdAt: Date
+  updatedAt: Date
+  createdBy: UserId
+  updatedBy: UserId
+}
+
+export interface Facility {
+  id: FacilityId
+  publicId: string
+  name: string
+  description?: string
+  iconUrl: string
+  isActive: boolean
+  partnerId?: PartnerId // Partner-scoped or global (null)
+  displayOrder: number
+  category: string // e.g., "COOLING", "STORAGE", "SAFETY"
+  // Audit fields
+  createdAt: Date
+  updatedAt: Date
+  createdBy: UserId
+  updatedBy: UserId
+}
+
+// Master Data API Responses
+export interface MasterDataResponse {
+  vehicleTypes: VehicleType[]
+  payloadTypes: PayloadType[]
+  facilities: Facility[]
+  // Partner context
+  partnerId?: PartnerId
+  globalDataIncluded: boolean
+}
+
+// Master Data CRUD Request Types
+export interface CreateVehicleTypeRequest {
+  name: string
+  description?: string
+  iconUrl: string
+  displayOrder?: number
+  capabilities?: string[]
+}
+
+export interface UpdateVehicleTypeRequest {
+  name?: string
+  description?: string
+  iconUrl?: string
+  isActive?: boolean
+  displayOrder?: number
+  capabilities?: string[]
+}
+
+export interface CreatePayloadTypeRequest {
+  name: string
+  description?: string
+  iconUrl: string
+  displayOrder?: number
+  requirements?: string[]
+}
+
+export interface UpdatePayloadTypeRequest {
+  name?: string
+  description?: string
+  iconUrl?: string
+  isActive?: boolean
+  displayOrder?: number
+  requirements?: string[]
+}
+
+export interface CreateFacilityRequest {
+  name: string
+  description?: string
+  iconUrl: string
+  displayOrder?: number
+  category: string
+}
+
+export interface UpdateFacilityRequest {
+  name?: string
+  description?: string
+  iconUrl?: string
+  isActive?: boolean
+  displayOrder?: number
+  category?: string
 }
 
 // API response interfaces
@@ -212,10 +345,28 @@ export function isSecurityEventType(value: string): value is SecurityEventType {
     'auth_failure', 
     'token_revocation',
     'permission_denied',
-    'suspicious_activity'
+    'suspicious_activity',
+    'rate_limit_hit'
   ].includes(value)
 }
 
 export function isSecurityEventSeverity(value: string): value is SecurityEventSeverity {
   return ['info', 'warning', 'error', 'critical'].includes(value)
+}
+
+// Master Data type guards
+export function isVehicleTypeId(value: string): value is VehicleTypeId {
+  return typeof value === 'string' && value.length > 0
+}
+
+export function isPayloadTypeId(value: string): value is PayloadTypeId {
+  return typeof value === 'string' && value.length > 0
+}
+
+export function isFacilityId(value: string): value is FacilityId {
+  return typeof value === 'string' && value.length > 0
+}
+
+export function isValidMasterDataCategory(value: string): value is 'vehicleTypes' | 'payloadTypes' | 'facilities' {
+  return ['vehicleTypes', 'payloadTypes', 'facilities'].includes(value)
 }

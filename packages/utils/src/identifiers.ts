@@ -6,12 +6,20 @@ declare const orderIdBrand: unique symbol
 declare const productIdBrand: unique symbol
 declare const organizationIdBrand: unique symbol
 declare const sessionIdBrand: unique symbol
+declare const partnerIdBrand: unique symbol
+declare const vehicleTypeIdBrand: unique symbol
+declare const payloadTypeIdBrand: unique symbol
+declare const facilityIdBrand: unique symbol
 
 export type UserId = string & { [userIdBrand]: true }
 export type OrderId = string & { [orderIdBrand]: true }
 export type ProductId = string & { [productIdBrand]: true }
 export type OrganizationId = string & { [organizationIdBrand]: true }
 export type SessionId = string & { [sessionIdBrand]: true }
+export type PartnerId = string & { [partnerIdBrand]: true }
+export type VehicleTypeId = string & { [vehicleTypeIdBrand]: true }
+export type PayloadTypeId = string & { [payloadTypeIdBrand]: true }
+export type FacilityId = string & { [facilityIdBrand]: true }
 
 /**
  * Generates a secure, prefixed, non-sequential public ID with TypeScript branded types.
@@ -129,3 +137,9 @@ export const generateOrderId = () => generatePublicId<OrderId>('ord')
 export const generateProductId = () => generatePublicId<ProductId>('prod')
 export const generateOrganizationId = () => generatePublicId<OrganizationId>('org')
 export const generateSessionId = () => generatePublicId<SessionId>('sess')
+
+// Master data ID generators for partner-scoped entities
+export const generatePartnerId = () => generatePublicId<PartnerId>('partner')
+export const generateVehicleTypeId = () => generatePublicId<VehicleTypeId>('vt')
+export const generatePayloadTypeId = () => generatePublicId<PayloadTypeId>('pt')
+export const generateFacilityId = () => generatePublicId<FacilityId>('fac')

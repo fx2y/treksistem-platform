@@ -7,6 +7,12 @@ import {
   index,
 } from 'drizzle-orm/sqlite-core';
 import type { UserId } from '@treksistem/utils';
+import type { 
+  VehicleTypeId, 
+  PayloadTypeId, 
+  FacilityId, 
+  PartnerId 
+} from '@treksistem/types';
 
 // Role type definition for TypeScript type safety
 export const roleValues = ['MASTER_ADMIN', 'PARTNER_ADMIN', 'DRIVER'] as const;
@@ -125,6 +131,108 @@ export const auditLogs = sqliteTable(
   ]
 );
 
+// Master data tables for partner-scoped configuration
+
+// Master vehicle types table - Partner-scoped or global vehicle configurations
+export const masterVehicleTypes = sqliteTable(
+  'master_vehicle_types',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    publicId: text('public_id').notNull().unique().$type<VehicleTypeId>(),
+    name: text('name').notNull(),
+    description: text('description'),
+    iconUrl: text('icon_url').notNull(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    partnerId: text('partner_id').$type<PartnerId>(), // Null = global
+    displayOrder: integer('display_order').notNull().default(0),
+    capabilities: text('capabilities'), // JSON array - e.g., ["HOT_FOOD", "FROZEN_FOOD"]
+    // Audit fields
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdateFn(() => new Date()),
+    createdBy: text('created_by').notNull().$type<UserId>(),
+    updatedBy: text('updated_by').notNull().$type<UserId>(),
+  },
+  table => [
+    uniqueIndex('master_vehicle_types_public_id_idx').on(table.publicId),
+    index('master_vehicle_types_partner_id_idx').on(table.partnerId),
+    index('master_vehicle_types_active_idx').on(table.isActive),
+    index('master_vehicle_types_display_order_idx').on(table.displayOrder),
+    index('master_vehicle_types_name_idx').on(table.name),
+  ]
+);
+
+// Master payload types table - Partner-scoped or global payload configurations
+export const masterPayloadTypes = sqliteTable(
+  'master_payload_types',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    publicId: text('public_id').notNull().unique().$type<PayloadTypeId>(),
+    name: text('name').notNull(),
+    description: text('description'),
+    iconUrl: text('icon_url').notNull(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    partnerId: text('partner_id').$type<PartnerId>(), // Null = global
+    displayOrder: integer('display_order').notNull().default(0),
+    requirements: text('requirements'), // JSON array - e.g., ["TEMPERATURE_CONTROLLED", "FRAGILE"]
+    // Audit fields
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdateFn(() => new Date()),
+    createdBy: text('created_by').notNull().$type<UserId>(),
+    updatedBy: text('updated_by').notNull().$type<UserId>(),
+  },
+  table => [
+    uniqueIndex('master_payload_types_public_id_idx').on(table.publicId),
+    index('master_payload_types_partner_id_idx').on(table.partnerId),
+    index('master_payload_types_active_idx').on(table.isActive),
+    index('master_payload_types_display_order_idx').on(table.displayOrder),
+    index('master_payload_types_name_idx').on(table.name),
+  ]
+);
+
+// Master facilities table - Partner-scoped or global facility configurations
+export const masterFacilities = sqliteTable(
+  'master_facilities',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    publicId: text('public_id').notNull().unique().$type<FacilityId>(),
+    name: text('name').notNull(),
+    description: text('description'),
+    iconUrl: text('icon_url').notNull(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    partnerId: text('partner_id').$type<PartnerId>(), // Null = global
+    displayOrder: integer('display_order').notNull().default(0),
+    category: text('category').notNull(), // e.g., "COOLING", "STORAGE", "SAFETY"
+    // Audit fields
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdateFn(() => new Date()),
+    createdBy: text('created_by').notNull().$type<UserId>(),
+    updatedBy: text('updated_by').notNull().$type<UserId>(),
+  },
+  table => [
+    uniqueIndex('master_facilities_public_id_idx').on(table.publicId),
+    index('master_facilities_partner_id_idx').on(table.partnerId),
+    index('master_facilities_active_idx').on(table.isActive),
+    index('master_facilities_display_order_idx').on(table.displayOrder),
+    index('master_facilities_name_idx').on(table.name),
+    index('master_facilities_category_idx').on(table.category),
+  ]
+);
+
 // Relations for relational queries
 export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
@@ -142,6 +250,40 @@ export const sessionRevocationsRelations = relations(sessionRevocations, ({ one 
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
+}));
+
+// Master data relations for audit trails
+export const masterVehicleTypesRelations = relations(masterVehicleTypes, ({ one }) => ({
+  creator: one(users, { 
+    fields: [masterVehicleTypes.createdBy], 
+    references: [users.publicId] 
+  }),
+  updater: one(users, { 
+    fields: [masterVehicleTypes.updatedBy], 
+    references: [users.publicId] 
+  }),
+}));
+
+export const masterPayloadTypesRelations = relations(masterPayloadTypes, ({ one }) => ({
+  creator: one(users, { 
+    fields: [masterPayloadTypes.createdBy], 
+    references: [users.publicId] 
+  }),
+  updater: one(users, { 
+    fields: [masterPayloadTypes.updatedBy], 
+    references: [users.publicId] 
+  }),
+}));
+
+export const masterFacilitiesRelations = relations(masterFacilities, ({ one }) => ({
+  creator: one(users, { 
+    fields: [masterFacilities.createdBy], 
+    references: [users.publicId] 
+  }),
+  updater: one(users, { 
+    fields: [masterFacilities.updatedBy], 
+    references: [users.publicId] 
+  }),
 }));
 
 // Type inference helpers
@@ -175,4 +317,28 @@ export type SessionRevocationWithUser = SessionRevocation & {
 
 export type AuditLogWithUser = AuditLog & {
   user: User | null;
+};
+
+// Master data type inference helpers
+export type MasterVehicleType = typeof masterVehicleTypes.$inferSelect;
+export type NewMasterVehicleType = typeof masterVehicleTypes.$inferInsert;
+export type MasterPayloadType = typeof masterPayloadTypes.$inferSelect;
+export type NewMasterPayloadType = typeof masterPayloadTypes.$inferInsert;
+export type MasterFacility = typeof masterFacilities.$inferSelect;
+export type NewMasterFacility = typeof masterFacilities.$inferInsert;
+
+// Enhanced master data types with relations
+export type MasterVehicleTypeWithAudit = MasterVehicleType & {
+  creator: User | null;
+  updater: User | null;
+};
+
+export type MasterPayloadTypeWithAudit = MasterPayloadType & {
+  creator: User | null;
+  updater: User | null;
+};
+
+export type MasterFacilityWithAudit = MasterFacility & {
+  creator: User | null;
+  updater: User | null;
 };
