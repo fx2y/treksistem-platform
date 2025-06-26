@@ -2,3 +2,9 @@ name = "treksistem-api-mvp"
 main = "src/index.ts"
 compatibility_date = "2025-06-25"
 minify = true
+
+[[d1_databases]]
+binding = "DB" # This binding will be available in the Worker on `env.DB`
+database_name = "treksistem-db-mvp"
+database_id = "YOUR_D1_DATABASE_ID_HERE" # Replace with your actual D1 DB ID
+migrations_dir = "../../packages/db/migrations"

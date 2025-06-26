@@ -3,14 +3,30 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
   "description": "Shared database client, schema, and migrations for D1.",
   "scripts": {
-    "lint": "echo 'No source files to lint yet'",
-    "lint:fix": "echo 'No source files to lint yet'",
-    "format": "prettier --write ."
+    "build": "pnpm generate",
+    "dev": "echo \"'dev' script not applicable for @treksistem/db\"",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "test": "echo \"'test' script not applicable for @treksistem/db\"",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "@treksistem/eslint-config-custom": "workspace:*",
     "@treksistem/tsconfig": "workspace:*",
-    "@treksistem/eslint-config-custom": "workspace:*"
+    "dotenv": "^16.0.0",
+    "drizzle-kit": "^0.31.2",
+    "eslint": "^9.0.0",
+    "typescript": "^5.0.0"
   }
 }

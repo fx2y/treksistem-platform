@@ -104,6 +104,22 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 
 **Current Status**: Frontend auto-deploys, API manual. Missing: test framework, branch protection, CF secrets.
 
+## Database Layer (@treksistem/db)
+
+**ORM**: Drizzle ORM v0.44.2 + Kit v0.31.2 (exact versions critical)
+**Driver**: sqlite (local) + d1-http (prod), D1Database binding in wrangler.toml
+**Interface**: `createDb(d1: D1Database)` factory, schema re-exports, NO direct connections
+**Migrations**: ONLY drizzle-kit CLI (never manual wrangler d1 execute)
+**Config**: drizzle.config.ts sqlite dialect, empty schema needs `export {}`
+**Integration**: Hono `{ Bindings: { DB: D1Database } }`, endpoints `/ping` + `/db-health`
+
+**Critical Constraints:**
+
+- Run drizzle-kit from package dir (NOT workspace filters)
+- Both `@treksistem/db` + `drizzle-orm` deps required in consumers
+- Migration gen needs CLOUDFLARE_ACCOUNT_ID/D1_DATABASE_ID/D1_TOKEN
+- Version compatibility strict but undocumented - test early
+
 ## Secure Public Identifiers (@treksistem/utils)
 
 **Architecture**: nanoid v5.x (ESM-only, 124 bytes, 4.7M ops/sec) + branded TypeScript types
@@ -113,6 +129,7 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 **Integration**: Dual DB schema (internal id + public_id), transform functions for API boundaries
 
 **Critical Patterns:**
+
 - String parsing: Use `indexOf()/slice()` NOT `split()` (handles embedded delimiters)
 - Array allocation: `new Array<T>(count)` for TypeScript inference
 - No console in libraries: Use silent fallbacks
