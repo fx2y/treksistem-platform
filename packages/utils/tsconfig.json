@@ -17,15 +17,12 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*", "test-verification.ts"],
   "exclude": [
     "dist",
     "node_modules",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "test-verification.ts",
     "benchmark.ts"
   ]
 }

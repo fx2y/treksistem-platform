@@ -1,4 +1,4 @@
-import baseConfig from '@treksistem/eslint-config-custom/base.js'
+import baseConfig from '@treksistem/eslint-config-custom/base.js';
 
 export default [
   ...baseConfig,
@@ -11,12 +11,6 @@ export default [
     },
   },
   {
-    ignores: [
-      'dist/**',
-      'node_modules/**',
-      '*.config.js',
-      'test-verification.ts',
-      'benchmark.ts',
-    ],
+    ignores: ['dist/**', 'node_modules/**', '*.config.js', 'benchmark.ts'],
   },
-]
+];
