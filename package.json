@@ -20,11 +20,11 @@
   },
   "devDependencies": {
     "eslint": "^9.0.0",
-    "typescript-eslint": "^8.0.0",
-    "prettier": "^3.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
-    "typescript": "^5.0.0"
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.0.0"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -49,5 +49,8 @@
         "arm64"
       ]
     }
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.44.2"
   }
 }

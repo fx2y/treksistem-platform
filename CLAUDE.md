@@ -115,10 +115,11 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 
 **Critical Constraints:**
 
-- Run drizzle-kit from package dir (NOT workspace filters)
+- MUST hoist drizzle-orm to workspace root: `pnpm add -w drizzle-orm` (peer dependency resolution)
+- Use `pnpm exec drizzle-kit generate` NOT npm scripts (proper resolution)
+- Error "Please install latest version" = peer dependency issue, not version mismatch
 - Both `@treksistem/db` + `drizzle-orm` deps required in consumers
 - Migration gen needs CLOUDFLARE_ACCOUNT_ID/D1_DATABASE_ID/D1_TOKEN
-- Version compatibility strict but undocumented - test early
 
 ## Secure Public Identifiers (@treksistem/utils)
 
@@ -135,3 +136,11 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 - No console in libraries: Use silent fallbacks
 - Test constraints match code: Validate test data against actual limits
 - Monorepo builds: Filter packages with required scripts or add placeholders
+
+## User & Role Model (@treksistem/db schema)
+
+**Tables**: `users` (identity) + `user_roles` (RBAC assignments)
+**Public IDs**: `UserId` branded type, database UNIQUE constraint + index
+**Roles**: `MASTER_ADMIN|PARTNER_ADMIN|DRIVER` enum, contextId for partner scope
+**Relations**: Drizzle full relations API for type-safe joins
+**Constraints**: Composite unique (userId,role,contextId), CASCADE delete user_roles
