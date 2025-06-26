@@ -154,7 +154,7 @@ const protectedV1 = v1.basePath('/protected')
 protectedV1.use('*', requireAuth)
 
 // Example protected endpoint
-protectedV1.get('/profile', async (c) => {
+protectedV1.get('/profile', (c) => {
   const user = getCurrentUser(c)
   
   if (!user) {
@@ -181,7 +181,7 @@ protectedV1.get('/profile', async (c) => {
 const adminV1 = protectedV1.basePath('/admin')
 
 // Additional middleware for admin routes could go here
-adminV1.get('/users', async (c) => {
+adminV1.get('/users', (c) => {
   // This would typically require admin role check
   return c.json({
     message: 'Admin users endpoint - implement user management here'
@@ -189,7 +189,7 @@ adminV1.get('/users', async (c) => {
 })
 
 // System monitoring endpoints (protected)
-protectedV1.get('/system/health', async (c) => {
+protectedV1.get('/system/health', (c) => {
   try {
     const db = createDb(c.env.DB)
     const monitoring = createMonitoringService(db)
@@ -205,7 +205,7 @@ protectedV1.get('/system/health', async (c) => {
   }
 })
 
-protectedV1.get('/system/metrics', async (c) => {
+protectedV1.get('/system/metrics', (c) => {
   try {
     const db = createDb(c.env.DB)
     const monitoring = createMonitoringService(db)
@@ -217,10 +217,10 @@ protectedV1.get('/system/metrics', async (c) => {
       metrics,
       timestamp: Date.now()
     })
-  } catch {
+  } catch (error: unknown) {
     return c.json({
       error: 'metrics_unavailable',
-      details: 'Unable to fetch system metrics'
+      details: error instanceof Error ? error.message : 'Unable to fetch system metrics'
     }, 500)
   }
 })
@@ -257,10 +257,10 @@ protectedV1.post('/auth/logout', async (c) => {
     })
     
     return c.json({ success: true })
-  } catch {
+  } catch (error: unknown) {
     return c.json({
       error: 'logout_failed',
-      details: 'Failed to logout user'
+      details: error instanceof Error ? error.message : 'Failed to logout user'
     }, 500)
   }
 })
@@ -290,10 +290,10 @@ protectedV1.post('/system/cleanup', async (c) => {
       success: true,
       message: 'System cleanup completed'
     })
-  } catch {
+  } catch (error: unknown) {
     return c.json({
-      error: 'cleanup_failed',
-      details: 'System cleanup failed'
+      error: 'cleanup_failed', 
+      details: error instanceof Error ? error.message : 'System cleanup failed'
     }, 500)
   }
 })

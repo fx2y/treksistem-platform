@@ -11,6 +11,11 @@ interface JWTEnv {
   JWT_SECRET: string
 }
 
+// Type assertion helper
+function assertEnv(env: unknown): JWTEnv {
+  return env as JWTEnv
+}
+
 // Extended context with user session
 export interface AuthenticatedContext {
   user: UserSession
@@ -77,8 +82,9 @@ export function createJWTMiddleware(options: {
 
     try {
       // Initialize services
-      const db = createDb(c.env.DB as D1Database)
-      const jwtService = createJWTService(c.env.JWT_SECRET as string, db)
+      const env = assertEnv(c.env)
+      const db = createDb(env.DB)
+      const jwtService = createJWTService(env.JWT_SECRET, db)
       const monitoring = createMonitoringService(db)
 
       // Verify JWT token
@@ -119,8 +125,9 @@ export function createJWTMiddleware(options: {
 
       await next()
 
-    } catch (error) {
-      const db = createDb(c.env.DB as D1Database)
+    } catch (error: unknown) {
+      const env = assertEnv(c.env)
+      const db = createDb(env.DB)
       const monitoring = createMonitoringService(db)
 
       // Log failed token verification
@@ -130,7 +137,7 @@ export function createJWTMiddleware(options: {
         userAgent: c.req.header('user-agent'),
         details: {
           action: 'token_verification_failed',
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
           path: c.req.path,
           token: token.slice(0, 20) + '...' // Partial token for debugging
         },
@@ -143,16 +150,17 @@ export function createJWTMiddleware(options: {
       let errorCode = 'invalid_token'
       let details = 'Token verification failed'
 
-      if (error.message.includes('expired')) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      if (errorMessage.includes('expired')) {
         errorCode = 'token_expired'
         details = 'Token has expired'
-      } else if (error.message.includes('revoked')) {
+      } else if (errorMessage.includes('revoked')) {
         errorCode = 'token_revoked'
         details = 'Token has been revoked'
-      } else if (error.message.includes('invalid') || error.message.includes('verification failed')) {
+      } else if (errorMessage.includes('invalid') || errorMessage.includes('verification failed')) {
         errorCode = 'invalid_token'
         details = 'Invalid or malformed token'
-      } else if (error.message.includes('signature')) {
+      } else if (errorMessage.includes('signature')) {
         errorCode = 'invalid_signature'
         details = 'Token signature verification failed'
       }
@@ -190,7 +198,8 @@ export function requireRole(
     const hasRequiredRole = allowedRoles.some(role => userRoles.includes(role))
 
     if (!hasRequiredRole) {
-      const db = createDb(c.env.DB as D1Database)
+      const env = assertEnv(c.env)
+      const db = createDb(env.DB)
       const monitoring = createMonitoringService(db)
 
       // Log authorization failure
@@ -250,7 +259,8 @@ export function requireContext(
     )
 
     if (!hasContextAccess) {
-      const db = createDb(c.env.DB as D1Database)
+      const env = assertEnv(c.env)
+      const db = createDb(env.DB)
       const monitoring = createMonitoringService(db)
 
       // Log context access failure

@@ -109,8 +109,8 @@ function generateWebGLFingerprint(): string {
     let renderer = 'unknown'
     
     try {
-      vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown'
-      renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown'
+      vendor = debugInfo ? (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) as string) : 'unknown'
+      renderer = debugInfo ? (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string) : 'unknown'
     } catch {
       // Use defaults
     }
@@ -233,7 +233,7 @@ export class SecureStorage {
         decrypted = this.simpleDecrypt(serialized)
       }
 
-      const data = JSON.parse(decrypted)
+      const data = JSON.parse(decrypted) as { value: unknown; expiresAt?: number }
       
       // Check expiration
       if (data.expiresAt && Date.now() > data.expiresAt) {
