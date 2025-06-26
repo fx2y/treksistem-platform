@@ -29,6 +29,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@treksistem/types": "workspace:^",
     "@treksistem/utils": "workspace:^"
   }
 }
