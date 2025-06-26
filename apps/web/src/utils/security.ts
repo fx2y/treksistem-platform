@@ -108,11 +108,15 @@ function generateWebGLFingerprint(): string {
     let vendor = 'unknown'
     let renderer = 'unknown'
     
-    try {
-      vendor = debugInfo ? (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) as string) : 'unknown'
-      renderer = debugInfo ? (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string) : 'unknown'
-    } catch {
-      // Use defaults
+    if (debugInfo) {
+      try {
+        const vendorParam = gl.getParameter((debugInfo as any).UNMASKED_VENDOR_WEBGL)
+        const rendererParam = gl.getParameter((debugInfo as any).UNMASKED_RENDERER_WEBGL)
+        vendor = String(vendorParam)
+        renderer = String(rendererParam)
+      } catch {
+        // Use defaults
+      }
     }
     
     return `${vendor}|${renderer}`

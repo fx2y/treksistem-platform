@@ -211,10 +211,10 @@ protectedV1.get('/system/metrics', (c) => {
     const monitoring = createMonitoringService(db)
     
     // Get recent metrics (last 100)
-    const metrics = monitoring.getRecentMetrics ? monitoring.getRecentMetrics(undefined, 100) : []
+    const metricsResult = monitoring.getRecentMetrics ? monitoring.getRecentMetrics(undefined, 100) : []
     
     return c.json({
-      metrics,
+      metrics: metricsResult,
       timestamp: Date.now()
     })
   } catch (error: unknown) {
@@ -284,7 +284,9 @@ protectedV1.post('/system/cleanup', async (c) => {
     
     // Run cleanup tasks
     await jwtService.cleanupExpiredRevocations()
-    await monitoring.cleanup()
+    if (monitoring.cleanup) {
+      await monitoring.cleanup()
+    }
     
     return c.json({
       success: true,
