@@ -1,0 +1,58 @@
+{
+  "name": "@treksistem/utils",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Shared utilities for the Treksistem platform",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./database": {
+      "types": "./dist/database-integration.d.ts",
+      "import": "./dist/database-integration.js"
+    },
+    "./workers": {
+      "types": "./dist/cloudflare-workers.d.ts",
+      "import": "./dist/cloudflare-workers.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/ --cache",
+    "lint:fix": "eslint src/ --cache --fix",
+    "format": "prettier --write .",
+    "test": "tsx test-verification.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "nanoid": "^5.0.0"
+  },
+  "devDependencies": {
+    "@treksistem/tsconfig": "workspace:*",
+    "@treksistem/eslint-config-custom": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "^4.19.0",
+    "typescript": "catalog:"
+  },
+  "keywords": [
+    "utilities",
+    "identifiers",
+    "security",
+    "typescript",
+    "cloudflare-workers"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/treksistem/platform.git",
+    "directory": "packages/utils"
+  },
+  "license": "MIT"
+}

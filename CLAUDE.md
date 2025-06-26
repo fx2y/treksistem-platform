@@ -103,3 +103,18 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 - Next.js deploy: `output:'export'` + `trailingSlash:true` for Cloudflare Pages
 
 **Current Status**: Frontend auto-deploys, API manual. Missing: test framework, branch protection, CF secrets.
+
+## Secure Public Identifiers (@treksistem/utils)
+
+**Architecture**: nanoid v5.x (ESM-only, 124 bytes, 4.7M ops/sec) + branded TypeScript types
+**Format**: `{prefix}_{21-char-nanoid}` - URL-safe, non-sequential, cryptographically secure
+**Validation**: Runtime regex + compile-time template literals. Prefix: 2-10 lowercase alphanumeric
+**Performance**: Module-level pre-computation, pre-compiled regex, Workers singleton pattern
+**Integration**: Dual DB schema (internal id + public_id), transform functions for API boundaries
+
+**Critical Patterns:**
+- String parsing: Use `indexOf()/slice()` NOT `split()` (handles embedded delimiters)
+- Array allocation: `new Array<T>(count)` for TypeScript inference
+- No console in libraries: Use silent fallbacks
+- Test constraints match code: Validate test data against actual limits
+- Monorepo builds: Filter packages with required scripts or add placeholders

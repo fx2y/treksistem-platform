@@ -8,10 +8,14 @@
   "license": "UNLICENSED",
   "packageManager": "pnpm@9.15.0",
   "scripts": {
+    "build": "pnpm --filter=@treksistem/* build",
+    "dev": "pnpm --filter=@treksistem/* dev",
     "lint": "pnpm --filter=@treksistem/* lint",
     "lint:fix": "pnpm --filter=@treksistem/* lint:fix",
     "format": "pnpm --filter=@treksistem/* format",
     "test": "pnpm --filter=@treksistem/* test",
+    "type-check": "tsc --build",
+    "clean": "pnpm --filter=@treksistem/* clean && rm -rf node_modules/.cache",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -1,0 +1,34 @@
+{
+  "extends": "./packages/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@treksistem/db": ["packages/db/src/index.ts"],
+      "@treksistem/db/*": ["packages/db/src/*"],
+      "@treksistem/types": ["packages/types/src/index.ts"],
+      "@treksistem/types/*": ["packages/types/src/*"],
+      "@treksistem/ui": ["packages/ui/src/index.ts"],
+      "@treksistem/ui/*": ["packages/ui/src/*"],
+      "@treksistem/utils": ["packages/utils/src/index.ts"],
+      "@treksistem/utils/*": ["packages/utils/src/*"]
+    }
+  },
+  "files": [],
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./packages/db" },
+    { "path": "./packages/types" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/utils" }
+  ],
+  "include": [],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/dist",
+    "**/node_modules",
+    "**/.next",
+    "**/out"
+  ]
+}
