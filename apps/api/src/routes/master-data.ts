@@ -296,6 +296,109 @@ export function createMasterDataRouter() {
     }
   });
 
+  // Get payload type by ID
+  payloadTypesRouter.get('/:id', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {
+    try {
+      const id = c.req.param('id') as PayloadTypeId;
+      const partnerId = c.get('partnerId') as PartnerId | null;
+      const masterDataService = createMasterDataService(
+        c.env.DB,
+        createMonitoringService(createDb(c.env.DB))
+      );
+
+      const payloadType = await masterDataService.getPayloadTypeById(id, partnerId || undefined);
+
+      return c.json({
+        success: true,
+        data: payloadType,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      throw handleServiceError(error);
+    }
+  });
+
+  // Create payload type
+  payloadTypesRouter.post(
+    '/',
+    zValidator('json', createPayloadTypeSchema),
+    ...createMasterDataMiddlewareStack('create'),
+    async (c: Context) => {
+      try {
+        const data = c.req.valid('json');
+        const user = getCurrentUser(c) as UserSession;
+        const masterDataService = createMasterDataService(
+          c.env.DB,
+          createMonitoringService(createDb(c.env.DB))
+        );
+
+        const payloadType = await masterDataService.createPayloadType(data, user);
+
+        return c.json({
+          success: true,
+          data: payloadType,
+          timestamp: Date.now(),
+        }, 201);
+      } catch (error) {
+        throw handleServiceError(error);
+      }
+    }
+  );
+
+  // Update payload type
+  payloadTypesRouter.put(
+    '/:id',
+    zValidator('json', updatePayloadTypeSchema),
+    ...createMasterDataMiddlewareStack('update', 'payload-types'),
+    async (c: Context) => {
+      try {
+        const id = c.req.param('id') as PayloadTypeId;
+        const data = c.req.valid('json');
+        const user = getCurrentUser(c) as UserSession;
+        const masterDataService = createMasterDataService(
+          c.env.DB,
+          createMonitoringService(createDb(c.env.DB))
+        );
+
+        const payloadType = await masterDataService.updatePayloadType(id, data, user);
+
+        return c.json({
+          success: true,
+          data: payloadType,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        throw handleServiceError(error);
+      }
+    }
+  );
+
+  // Delete payload type (soft delete)
+  payloadTypesRouter.delete(
+    '/:id',
+    ...createMasterDataMiddlewareStack('delete', 'payload-types'),
+    async (c: Context) => {
+      try {
+        const id = c.req.param('id') as PayloadTypeId;
+        const user = getCurrentUser(c) as UserSession;
+        const masterDataService = createMasterDataService(
+          c.env.DB,
+          createMonitoringService(createDb(c.env.DB))
+        );
+
+        await masterDataService.deletePayloadType(id, user);
+
+        return c.json({
+          success: true,
+          message: 'Payload type deleted successfully',
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        throw handleServiceError(error);
+      }
+    }
+  );
+
   // Facilities routes (similar structure)
   const facilitiesRouter = new Hono<{ Bindings: MasterDataEnv }>();
 
@@ -319,6 +422,109 @@ export function createMasterDataRouter() {
       throw handleServiceError(error);
     }
   });
+
+  // Get facility by ID
+  facilitiesRouter.get('/:id', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {
+    try {
+      const id = c.req.param('id') as FacilityId;
+      const partnerId = c.get('partnerId') as PartnerId | null;
+      const masterDataService = createMasterDataService(
+        c.env.DB,
+        createMonitoringService(createDb(c.env.DB))
+      );
+
+      const facility = await masterDataService.getFacilityById(id, partnerId || undefined);
+
+      return c.json({
+        success: true,
+        data: facility,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      throw handleServiceError(error);
+    }
+  });
+
+  // Create facility
+  facilitiesRouter.post(
+    '/',
+    zValidator('json', createFacilitySchema),
+    ...createMasterDataMiddlewareStack('create'),
+    async (c: Context) => {
+      try {
+        const data = c.req.valid('json');
+        const user = getCurrentUser(c) as UserSession;
+        const masterDataService = createMasterDataService(
+          c.env.DB,
+          createMonitoringService(createDb(c.env.DB))
+        );
+
+        const facility = await masterDataService.createFacility(data, user);
+
+        return c.json({
+          success: true,
+          data: facility,
+          timestamp: Date.now(),
+        }, 201);
+      } catch (error) {
+        throw handleServiceError(error);
+      }
+    }
+  );
+
+  // Update facility
+  facilitiesRouter.put(
+    '/:id',
+    zValidator('json', updateFacilitySchema),
+    ...createMasterDataMiddlewareStack('update', 'facilities'),
+    async (c: Context) => {
+      try {
+        const id = c.req.param('id') as FacilityId;
+        const data = c.req.valid('json');
+        const user = getCurrentUser(c) as UserSession;
+        const masterDataService = createMasterDataService(
+          c.env.DB,
+          createMonitoringService(createDb(c.env.DB))
+        );
+
+        const facility = await masterDataService.updateFacility(id, data, user);
+
+        return c.json({
+          success: true,
+          data: facility,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        throw handleServiceError(error);
+      }
+    }
+  );
+
+  // Delete facility (soft delete)
+  facilitiesRouter.delete(
+    '/:id',
+    ...createMasterDataMiddlewareStack('delete', 'facilities'),
+    async (c: Context) => {
+      try {
+        const id = c.req.param('id') as FacilityId;
+        const user = getCurrentUser(c) as UserSession;
+        const masterDataService = createMasterDataService(
+          c.env.DB,
+          createMonitoringService(createDb(c.env.DB))
+        );
+
+        await masterDataService.deleteFacility(id, user);
+
+        return c.json({
+          success: true,
+          message: 'Facility deleted successfully',
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        throw handleServiceError(error);
+      }
+    }
+  );
 
   // Mount sub-routers
   app.route('/vehicle-types', vehicleTypesRouter);

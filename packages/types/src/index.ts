@@ -1,6 +1,32 @@
 // Shared TypeScript types for the Treksistem platform
 // Core user and authentication types
 
+// Import and re-export branded types from utils (single source of truth)
+import type {
+  UserId,
+  PartnerId,
+  VehicleTypeId,
+  PayloadTypeId,
+  FacilityId,
+} from '@treksistem/utils';
+
+export type {
+  UserId,
+  PartnerId,
+  VehicleTypeId,
+  PayloadTypeId,
+  FacilityId,
+} from '@treksistem/utils';
+
+// Re-export type guard functions from utils
+export {
+  isVehicleTypeId,
+  isPayloadTypeId,
+  isFacilityId,
+  isPartnerId,
+  isUserId,
+} from '@treksistem/utils';
+
 // User role definitions for RBAC system
 export type Role = 'MASTER_ADMIN' | 'PARTNER_ADMIN' | 'DRIVER'
 
@@ -66,9 +92,8 @@ export type SecurityEventType =
   | 'auth_success' 
   | 'auth_failure' 
   | 'token_revocation' 
-  | 'permission_denied'
-  | 'suspicious_activity'
   | 'rate_limit_hit'
+  | 'suspicious_activity'
 
 // Security event severity levels
 export type SecurityEventSeverity = 'info' | 'warning' | 'error' | 'critical'
@@ -91,48 +116,6 @@ export interface SecurityEvent {
   timestamp: number
   /** Event severity level */
   severity: SecurityEventSeverity
-}
-
-// Database user public identifier type (branded string)
-export type UserId = string & { readonly __brand: 'UserId' }
-
-// Helper function to create branded UserId
-export function createUserId(id: string): UserId {
-  return id as UserId
-}
-
-// Partner public identifier type (branded string)
-export type PartnerId = string & { readonly __brand: 'PartnerId' }
-
-// Helper function to create branded PartnerId
-export function createPartnerId(id: string): PartnerId {
-  return id as PartnerId
-}
-
-// Driver public identifier type (branded string)
-export type DriverId = string & { readonly __brand: 'DriverId' }
-
-// Helper function to create branded DriverId
-export function createDriverId(id: string): DriverId {
-  return id as DriverId
-}
-
-// Master Data Types - Branded identifiers for type safety
-export type VehicleTypeId = string & { readonly __brand: 'VehicleTypeId' }
-export type PayloadTypeId = string & { readonly __brand: 'PayloadTypeId' }
-export type FacilityId = string & { readonly __brand: 'FacilityId' }
-
-// Helper functions to create branded master data IDs
-export function createVehicleTypeId(id: string): VehicleTypeId {
-  return id as VehicleTypeId
-}
-
-export function createPayloadTypeId(id: string): PayloadTypeId {
-  return id as PayloadTypeId
-}
-
-export function createFacilityId(id: string): FacilityId {
-  return id as FacilityId
 }
 
 // Master Data Interfaces
@@ -249,7 +232,7 @@ export interface UpdateFacilityRequest {
   category?: string
 }
 
-// API response interfaces
+// API Response Types
 export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
@@ -266,7 +249,6 @@ export interface PaginatedResponse<T = unknown> extends ApiResponse<T[]> {
   }
 }
 
-// Error response interface for consistent API errors
 export interface ErrorResponse {
   error: string
   details?: string
@@ -274,7 +256,6 @@ export interface ErrorResponse {
   timestamp?: number
 }
 
-// Authentication response interface
 export interface AuthResponse {
   jwt: string
   user: {
@@ -291,14 +272,12 @@ export interface AuthResponse {
   }
 }
 
-// Token refresh response
 export interface TokenRefreshResponse {
   jwt: string
   expiresAt: number
   refreshable: boolean
 }
 
-// Health check response
 export interface HealthCheckResponse {
   status: 'healthy' | 'unhealthy'
   timestamp: number
@@ -309,7 +288,6 @@ export interface HealthCheckResponse {
   }>
 }
 
-// Monitoring metrics interface
 export interface SystemMetrics {
   timestamp: number
   requestCount: number
@@ -318,7 +296,6 @@ export interface SystemMetrics {
   activeConnections: number
 }
 
-// User profile interface for API responses
 export interface UserProfile {
   id: string
   email: string
@@ -330,41 +307,27 @@ export interface UserProfile {
   rateLimitTier: RateLimitTier
 }
 
-// Export utility type guards
+// Type Guards
 export function isRole(value: string): value is Role {
-  return ['MASTER_ADMIN', 'PARTNER_ADMIN', 'DRIVER'].includes(value)
+  return ['MASTER_ADMIN', 'PARTNER_ADMIN', 'DRIVER'].includes(value as Role)
 }
 
 export function isRateLimitTier(value: string): value is RateLimitTier {
-  return ['basic', 'premium', 'admin'].includes(value)
+  return ['basic', 'premium', 'admin'].includes(value as RateLimitTier)
 }
 
 export function isSecurityEventType(value: string): value is SecurityEventType {
   return [
-    'auth_success',
+    'auth_success', 
     'auth_failure', 
     'token_revocation',
-    'permission_denied',
-    'suspicious_activity',
-    'rate_limit_hit'
+    'rate_limit_hit',
+    'suspicious_activity'
   ].includes(value)
 }
 
 export function isSecurityEventSeverity(value: string): value is SecurityEventSeverity {
-  return ['info', 'warning', 'error', 'critical'].includes(value)
-}
-
-// Master Data type guards
-export function isVehicleTypeId(value: string): value is VehicleTypeId {
-  return typeof value === 'string' && value.length > 0
-}
-
-export function isPayloadTypeId(value: string): value is PayloadTypeId {
-  return typeof value === 'string' && value.length > 0
-}
-
-export function isFacilityId(value: string): value is FacilityId {
-  return typeof value === 'string' && value.length > 0
+  return ['info', 'warning', 'error', 'critical'].includes(value as SecurityEventSeverity)
 }
 
 export function isValidMasterDataCategory(value: string): value is 'vehicleTypes' | 'payloadTypes' | 'facilities' {

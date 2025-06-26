@@ -72,15 +72,15 @@ export function requirePartnerContext(
 
       // Log partner context requirement failure
       await monitoring.recordSecurityEvent({
-        type: 'permission_denied',
+        type: 'auth_failure',
         userId: user.sub,
         email: user.email,
-        ip: getClientIP(c),
-        userAgent: c.req.header('user-agent'),
         details: {
-          action: 'partner_context_required',
-          path: c.req.path,
+          action: 'master_data_access_denied',
+          reason: 'insufficient_partner_context',
+          requiredContext: 'partner_admin_or_master_admin',
           userRoles: user.roles.map(r => r.role),
+          operation: 'partner_context_validation',
         },
         timestamp: Date.now(),
         severity: 'warning',
@@ -182,13 +182,12 @@ export function validateResourceOwnership(
         
         // Log ownership violation
         await monitoring.recordSecurityEvent({
-          type: 'permission_denied',
+          type: 'auth_failure',
           userId: user.sub,
           email: user.email,
-          ip: getClientIP(c),
-          userAgent: c.req.header('user-agent'),
           details: {
-            action: 'resource_ownership_violation',
+            action: 'master_data_access_denied',
+            reason: 'resource_ownership_violation',
             resourceType,
             resourceId,
             resourcePartnerId,
@@ -264,16 +263,16 @@ export function validateMasterDataOperation(
 
       // Log permission denied
       await monitoring.recordSecurityEvent({
-        type: 'permission_denied',
+        type: 'auth_failure',
         userId: user.sub,
         email: user.email,
-        ip: getClientIP(c),
-        userAgent: c.req.header('user-agent'),
         details: {
-          action: 'operation_permission_denied',
+          action: 'master_data_access_denied',
+          reason: 'insufficient_permissions',
           operation,
+          resourceType: c.req.param('type'),
+          requiredRoles: ['PARTNER_ADMIN', 'MASTER_ADMIN'],
           userRoles: user.roles.map(r => r.role),
-          path: c.req.path,
         },
         timestamp: Date.now(),
         severity: 'warning',

@@ -20,6 +20,9 @@
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@treksistem/utils": "workspace:*"
+  },
   "devDependencies": {
     "@treksistem/tsconfig": "workspace:*",
     "@treksistem/eslint-config-custom": "workspace:*"

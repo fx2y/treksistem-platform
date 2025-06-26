@@ -375,9 +375,7 @@ export function createMasterDataService(
     );
   };
 
-  // Similar implementations for Payload Types and Facilities
-  // (abbreviated for brevity - would follow same patterns)
-
+  // Payload Types operations
   const getPayloadTypes = async (partnerId?: PartnerId): Promise<PayloadType[]> => {
     const records = await db
       .select()
@@ -396,6 +394,140 @@ export function createMasterDataService(
     return records.map(transformDbPayloadType);
   };
 
+  // Payload Types CRUD operations
+  const getPayloadTypeById = async (
+    id: PayloadTypeId,
+    partnerId?: PartnerId
+  ): Promise<PayloadType> => {
+    const record = await db
+      .select()
+      .from(masterPayloadTypes)
+      .where(
+        and(
+          eq(masterPayloadTypes.publicId, id),
+          eq(masterPayloadTypes.isActive, true),
+          or(
+            isNull(masterPayloadTypes.partnerId),
+            partnerId ? eq(masterPayloadTypes.partnerId, partnerId) : sql`0=1`
+          )
+        )
+      )
+      .limit(1);
+
+    if (!record[0]) {
+      throw new NotFoundError('Payload type', id);
+    }
+
+    return transformDbPayloadType(record[0]);
+  };
+
+  const createPayloadType = async (
+    data: CreatePayloadTypeRequest,
+    user: UserSession
+  ): Promise<PayloadType> => {
+    const userPartnerId = getUserPartnerContext(user);
+    const publicId = generatePayloadTypeId();
+
+    // Partner admins can only create data for their own partner
+    if (!isMasterAdmin(user) && !userPartnerId) {
+      throw new PermissionError('Partner context required for creating payload types');
+    }
+
+    const now = new Date();
+    const newRecord: NewMasterPayloadType = {
+      publicId,
+      name: data.name,
+      description: data.description,
+      iconUrl: data.iconUrl,
+      isActive: true,
+      partnerId: isMasterAdmin(user) ? null : userPartnerId,
+      displayOrder: data.displayOrder || 0,
+      requirements: JSON.stringify(data.requirements || []),
+      createdAt: now,
+      updatedAt: now,
+      createdBy: user.sub as UserId,
+      updatedBy: user.sub as UserId,
+    };
+
+    await db.insert(masterPayloadTypes).values(newRecord);
+
+    await recordAuditEvent(
+      'create',
+      user,
+      'master_payload_types',
+      publicId,
+      newRecord.partnerId,
+      { name: data.name, requirements: data.requirements }
+    );
+
+    return await getPayloadTypeById(publicId);
+  };
+
+  const updatePayloadType = async (
+    id: PayloadTypeId,
+    data: UpdatePayloadTypeRequest,
+    user: UserSession
+  ): Promise<PayloadType> => {
+    // First, get the existing record to validate ownership
+    const existing = await getPayloadTypeById(id);
+    
+    // Validate partner access
+    validatePartnerAccess(user, existing.partnerId || null, 'update');
+
+    const updateData: Partial<MasterPayloadType> = {
+      ...(data.name && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.iconUrl && { iconUrl: data.iconUrl }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
+      ...(data.requirements && { requirements: JSON.stringify(data.requirements) }),
+      updatedAt: new Date(),
+      updatedBy: user.sub as UserId,
+    };
+
+    await db
+      .update(masterPayloadTypes)
+      .set(updateData)
+      .where(eq(masterPayloadTypes.publicId, id));
+
+    await recordAuditEvent(
+      'update',
+      user,
+      'master_payload_types',
+      id,
+      existing.partnerId || null,
+      data
+    );
+
+    return await getPayloadTypeById(id);
+  };
+
+  const deletePayloadType = async (id: PayloadTypeId, user: UserSession): Promise<void> => {
+    const existing = await getPayloadTypeById(id);
+    
+    // Validate partner access
+    validatePartnerAccess(user, existing.partnerId || null, 'delete');
+
+    // Soft delete
+    await db
+      .update(masterPayloadTypes)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+        updatedBy: user.sub as UserId,
+      })
+      .where(eq(masterPayloadTypes.publicId, id));
+
+    await recordAuditEvent(
+      'delete',
+      user,
+      'master_payload_types',
+      id,
+      existing.partnerId || null
+    );
+  };
+
+  // Facilities operations  
   const getFacilities = async (partnerId?: PartnerId): Promise<Facility[]> => {
     const records = await db
       .select()
@@ -414,6 +546,139 @@ export function createMasterDataService(
     return records.map(transformDbFacility);
   };
 
+  // Facilities CRUD operations
+  const getFacilityById = async (
+    id: FacilityId,
+    partnerId?: PartnerId
+  ): Promise<Facility> => {
+    const record = await db
+      .select()
+      .from(masterFacilities)
+      .where(
+        and(
+          eq(masterFacilities.publicId, id),
+          eq(masterFacilities.isActive, true),
+          or(
+            isNull(masterFacilities.partnerId),
+            partnerId ? eq(masterFacilities.partnerId, partnerId) : sql`0=1`
+          )
+        )
+      )
+      .limit(1);
+
+    if (!record[0]) {
+      throw new NotFoundError('Facility', id);
+    }
+
+    return transformDbFacility(record[0]);
+  };
+
+  const createFacility = async (
+    data: CreateFacilityRequest,
+    user: UserSession
+  ): Promise<Facility> => {
+    const userPartnerId = getUserPartnerContext(user);
+    const publicId = generateFacilityId();
+
+    // Partner admins can only create data for their own partner
+    if (!isMasterAdmin(user) && !userPartnerId) {
+      throw new PermissionError('Partner context required for creating facilities');
+    }
+
+    const now = new Date();
+    const newRecord: NewMasterFacility = {
+      publicId,
+      name: data.name,
+      description: data.description,
+      iconUrl: data.iconUrl,
+      isActive: true,
+      partnerId: isMasterAdmin(user) ? null : userPartnerId,
+      displayOrder: data.displayOrder || 0,
+      category: data.category,
+      createdAt: now,
+      updatedAt: now,
+      createdBy: user.sub as UserId,
+      updatedBy: user.sub as UserId,
+    };
+
+    await db.insert(masterFacilities).values(newRecord);
+
+    await recordAuditEvent(
+      'create',
+      user,
+      'master_facilities',
+      publicId,
+      newRecord.partnerId,
+      { name: data.name, category: data.category }
+    );
+
+    return await getFacilityById(publicId);
+  };
+
+  const updateFacility = async (
+    id: FacilityId,
+    data: UpdateFacilityRequest,
+    user: UserSession
+  ): Promise<Facility> => {
+    // First, get the existing record to validate ownership
+    const existing = await getFacilityById(id);
+    
+    // Validate partner access
+    validatePartnerAccess(user, existing.partnerId || null, 'update');
+
+    const updateData: Partial<MasterFacility> = {
+      ...(data.name && { name: data.name }),
+      ...(data.description !== undefined && { description: data.description }),
+      ...(data.iconUrl && { iconUrl: data.iconUrl }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
+      ...(data.category && { category: data.category }),
+      updatedAt: new Date(),
+      updatedBy: user.sub as UserId,
+    };
+
+    await db
+      .update(masterFacilities)
+      .set(updateData)
+      .where(eq(masterFacilities.publicId, id));
+
+    await recordAuditEvent(
+      'update',
+      user,
+      'master_facilities',
+      id,
+      existing.partnerId || null,
+      data
+    );
+
+    return await getFacilityById(id);
+  };
+
+  const deleteFacility = async (id: FacilityId, user: UserSession): Promise<void> => {
+    const existing = await getFacilityById(id);
+    
+    // Validate partner access
+    validatePartnerAccess(user, existing.partnerId || null, 'delete');
+
+    // Soft delete
+    await db
+      .update(masterFacilities)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+        updatedBy: user.sub as UserId,
+      })
+      .where(eq(masterFacilities.publicId, id));
+
+    await recordAuditEvent(
+      'delete',
+      user,
+      'master_facilities',
+      id,
+      existing.partnerId || null
+    );
+  };
+
   const getAllMasterData = async (partnerId?: PartnerId): Promise<MasterDataResponse> => {
     const [vehicleTypes, payloadTypes, facilities] = await Promise.all([
       getVehicleTypes(partnerId),
@@ -430,7 +695,7 @@ export function createMasterDataService(
     };
   };
 
-  // Return service interface with placeholder implementations for brevity
+  // Return service interface with all implementations
   return {
     getVehicleTypes,
     getVehicleTypeById,
@@ -438,15 +703,15 @@ export function createMasterDataService(
     updateVehicleType,
     deleteVehicleType,
     getPayloadTypes,
-    getPayloadTypeById: async (id) => { throw new Error('Not implemented yet'); },
-    createPayloadType: async () => { throw new Error('Not implemented yet'); },
-    updatePayloadType: async () => { throw new Error('Not implemented yet'); },
-    deletePayloadType: async () => { throw new Error('Not implemented yet'); },
+    getPayloadTypeById,
+    createPayloadType,
+    updatePayloadType,
+    deletePayloadType,
     getFacilities,
-    getFacilityById: async (id) => { throw new Error('Not implemented yet'); },
-    createFacility: async () => { throw new Error('Not implemented yet'); },
-    updateFacility: async () => { throw new Error('Not implemented yet'); },
-    deleteFacility: async () => { throw new Error('Not implemented yet'); },
+    getFacilityById,
+    createFacility,
+    updateFacility,
+    deleteFacility,
     getAllMasterData,
   };
 }

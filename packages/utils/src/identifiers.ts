@@ -143,3 +143,24 @@ export const generatePartnerId = () => generatePublicId<PartnerId>('partner')
 export const generateVehicleTypeId = () => generatePublicId<VehicleTypeId>('vt')
 export const generatePayloadTypeId = () => generatePublicId<PayloadTypeId>('pt')
 export const generateFacilityId = () => generatePublicId<FacilityId>('fac')
+
+// Type guard functions for branded types
+export function isVehicleTypeId(value: string): value is VehicleTypeId {
+  return typeof value === 'string' && value.startsWith('vt_') && isValidPublicId(value)
+}
+
+export function isPayloadTypeId(value: string): value is PayloadTypeId {
+  return typeof value === 'string' && value.startsWith('pt_') && isValidPublicId(value)
+}
+
+export function isFacilityId(value: string): value is FacilityId {
+  return typeof value === 'string' && value.startsWith('fac_') && isValidPublicId(value)
+}
+
+export function isPartnerId(value: string): value is PartnerId {
+  return typeof value === 'string' && value.startsWith('partner_') && isValidPublicId(value)
+}
+
+export function isUserId(value: string): value is UserId {
+  return typeof value === 'string' && value.startsWith('user_') && isValidPublicId(value)
+}
