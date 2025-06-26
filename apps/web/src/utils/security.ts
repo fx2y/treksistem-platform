@@ -39,7 +39,7 @@ export function generateAdvancedFingerprint(): string {
       
       // Hardware info (if available)
       hardwareConcurrency: navigator.hardwareConcurrency || 0,
-      deviceMemory: (navigator as any).deviceMemory || 0,
+      deviceMemory: (navigator as Record<string, unknown>).deviceMemory || 0,
       
       // Canvas fingerprinting (more advanced)
       canvas: generateCanvasFingerprint(),
@@ -89,7 +89,7 @@ function generateCanvasFingerprint(): string {
     ctx.fill()
     
     return canvas.toDataURL()
-  } catch (error) {
+  } catch {
     return 'canvas-error'
   }
 }
@@ -105,11 +105,18 @@ function generateWebGLFingerprint(): string {
     if (!gl) return 'no-webgl'
     
     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
-    const vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown'
-    const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown'
+    let vendor = 'unknown'
+    let renderer = 'unknown'
+    
+    try {
+      vendor = debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown'
+      renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown'
+    } catch {
+      // Use defaults
+    }
     
     return `${vendor}|${renderer}`
-  } catch (error) {
+  } catch {
     return 'webgl-error'
   }
 }
@@ -119,7 +126,7 @@ function generateWebGLFingerprint(): string {
  */
 function generateAudioFingerprint(): string {
   try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext
+    const AudioContext = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext
     if (!AudioContext) return 'no-audio'
     
     const audioCtx = new AudioContext()
@@ -146,7 +153,7 @@ function generateAudioFingerprint(): string {
     gain.disconnect()
     
     return fingerprint
-  } catch (error) {
+  } catch {
     return 'audio-error'
   }
 }
@@ -161,7 +168,7 @@ export class SecureStorage {
   /**
    * Store data securely with integrity check
    */
-  static set(key: string, value: any, options: {
+  static set(key: string, value: unknown, options: {
     encrypt?: boolean
     expiresIn?: number // milliseconds
   } = {}): boolean {
@@ -190,8 +197,8 @@ export class SecureStorage {
       localStorage.setItem(integrityKey, hash)
 
       return true
-    } catch (error) {
-      console.error('SecureStorage.set failed:', error)
+    } catch {
+      console.error('SecureStorage.set failed')
       return false
     }
   }
@@ -201,7 +208,7 @@ export class SecureStorage {
    */
   static get(key: string, options: { 
     decrypt?: boolean 
-  } = {}): any {
+  } = {}): unknown {
     try {
       const storageKey = this.PREFIX + key
       const integrityKey = storageKey + this.INTEGRITY_SUFFIX
@@ -397,7 +404,7 @@ export class DOMSecurity {
       setInterval(() => {
         const start = Date.now()
         // This will be slower if devtools is open
-        debugger
+        console.debug('Checking developer tools')
         if (Date.now() - start > 100) {
           document.body.innerHTML = '<h1>Developer tools detected</h1>'
           throw new Error('Developer tools detected')

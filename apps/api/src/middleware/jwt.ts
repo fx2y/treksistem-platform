@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import { createJWTService, type UserSession } from '../services/jwt.service'
 import { createMonitoringService } from '../services/monitoring.service'
 import { getClientIP } from './security'
-import type { createDb } from '@treksistem/db'
+import { createDb } from '@treksistem/db'
 
 // Environment bindings interface for JWT
 interface JWTEnv {
@@ -77,8 +77,8 @@ export function createJWTMiddleware(options: {
 
     try {
       // Initialize services
-      const db = createDb(c.env.DB)
-      const jwtService = createJWTService(c.env.JWT_SECRET, db)
+      const db = createDb(c.env.DB as D1Database)
+      const jwtService = createJWTService(c.env.JWT_SECRET as string, db)
       const monitoring = createMonitoringService(db)
 
       // Verify JWT token
@@ -120,7 +120,7 @@ export function createJWTMiddleware(options: {
       await next()
 
     } catch (error) {
-      const db = createDb(c.env.DB)
+      const db = createDb(c.env.DB as D1Database)
       const monitoring = createMonitoringService(db)
 
       // Log failed token verification
@@ -190,7 +190,7 @@ export function requireRole(
     const hasRequiredRole = allowedRoles.some(role => userRoles.includes(role))
 
     if (!hasRequiredRole) {
-      const db = createDb(c.env.DB)
+      const db = createDb(c.env.DB as D1Database)
       const monitoring = createMonitoringService(db)
 
       // Log authorization failure
@@ -250,7 +250,7 @@ export function requireContext(
     )
 
     if (!hasContextAccess) {
-      const db = createDb(c.env.DB)
+      const db = createDb(c.env.DB as D1Database)
       const monitoring = createMonitoringService(db)
 
       // Log context access failure

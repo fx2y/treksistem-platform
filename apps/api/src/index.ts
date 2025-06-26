@@ -11,7 +11,7 @@ import { createAuthRouter } from './routes/auth'
 import { createSecurityMiddlewareStack } from './middleware/security'
 import { createMonitoringService, createPerformanceMiddleware } from './services/monitoring.service'
 import { createJWTService } from './services/jwt.service'
-import { requireAuth, optionalAuth, getCurrentUser } from './middleware/jwt'
+import { requireAuth, getCurrentUser } from './middleware/jwt'
 
 // Environment bindings interface
 interface Env {
@@ -135,11 +135,11 @@ v1.get('/db-health', async (c) => {
       responseTime: `${responseTime}ms`,
       timestamp: Date.now()
     })
-  } catch (error) {
+  } catch (err) {
     return c.json({
       success: false,
       error: 'Database connection failed',
-      details: error.message
+      details: err instanceof Error ? err.message : 'Unknown error'
     }, 500)
   }
 })
@@ -195,9 +195,8 @@ protectedV1.get('/system/health', async (c) => {
     const monitoring = createMonitoringService(db)
     
     const healthStatus = await monitoring.getHealthStatus()
-    
     return c.json(healthStatus)
-  } catch (error) {
+  } catch {
     return c.json({
       status: 'unhealthy',
       error: 'Health check failed',
@@ -218,7 +217,7 @@ protectedV1.get('/system/metrics', async (c) => {
       metrics,
       timestamp: Date.now()
     })
-  } catch (error) {
+  } catch {
     return c.json({
       error: 'metrics_unavailable',
       details: 'Unable to fetch system metrics'
@@ -258,7 +257,7 @@ protectedV1.post('/auth/logout', async (c) => {
     })
     
     return c.json({ success: true })
-  } catch (error) {
+  } catch {
     return c.json({
       error: 'logout_failed',
       details: 'Failed to logout user'
@@ -291,7 +290,7 @@ protectedV1.post('/system/cleanup', async (c) => {
       success: true,
       message: 'System cleanup completed'
     })
-  } catch (error) {
+  } catch {
     return c.json({
       error: 'cleanup_failed',
       details: 'System cleanup failed'
