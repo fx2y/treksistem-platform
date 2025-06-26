@@ -144,3 +144,79 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 **Roles**: `MASTER_ADMIN|PARTNER_ADMIN|DRIVER` enum, contextId for partner scope
 **Relations**: Drizzle full relations API for type-safe joins
 **Constraints**: Composite unique (userId,role,contextId), CASCADE delete user_roles
+
+## OAuth Authentication System (@treksistem/db + apps/api + apps/web)
+
+**Architecture**: Production Google OAuth 2.0 + JWT + RBAC + security monitoring
+**Database**: Enhanced users (emailVerified, lastActivity), session_revocations (JTI blacklist), audit_logs (security events)
+**Security Stack**: IP filter → Security headers → Request validation → Rate limiting (10 auth/min IP, 5 failures/hour email, 100/min global) → CSRF → Monitoring
+
+**Backend (apps/api):**
+- JWT Service: hono/jwt (4hr expiry, JTI tracking, revocation), interface: `sign() → {token,expiresAt,jti}`, `verify() → UserSession`, `revoke(jti)`, `isRevoked(jti)`
+- Auth Service: Google OAuth2Client verification, atomic user+role+audit creation, rate limit checking
+- Security Middleware: Origin validation + CSRF tokens, security headers (CSP,HSTS), multi-tier rate limiting
+- Monitoring: In-memory metrics (1000 limit) + database backup, all auth events logged with context
+
+**Frontend (apps/web):**
+- Auth Context: login/logout/refresh, HttpOnly cookies (XSS protection), auto-refresh (check 5min, refresh if <30min expiry)
+- Security Utils: Device fingerprinting (Canvas+WebGL+Audio→64char hash), secure storage (XOR+integrity), CSRF management
+- API Client: Automatic auth headers, standardized error classes (APIError, AuthenticationError, AuthorizationError, RateLimitError)
+
+**Critical Patterns:**
+- Security-first: Apply middleware BEFORE business logic, fail secure defaults
+- Atomic operations: User creation must be batch (user+role+audit), prevent partial state
+- Error consistency: `{error:"code", details:"message"}` format across all endpoints
+- Defense in depth: Multiple security layers, not single mechanism reliance
+- Audit everything: Log both success/failure events with full context (IP,userAgent,fingerprint)
+
+**Environment Setup:**
+- Secrets: JWT_SECRET (32+ chars), GOOGLE_CLIENT_ID, CSRF_SECRET (optional)
+- Database: Run drizzle-kit push after schema changes, update wrangler.toml D1 IDs
+- Frontend: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_GOOGLE_CLIENT_ID
+
+**Tech Debt Priority:**
+- High: Replace XOR encryption with crypto library, add refresh tokens, Redis/KV rate limiting
+- Medium: MFA prep, role management UI, advanced fingerprinting
+- Low: Additional OAuth providers, enterprise SSO, analytics dashboard
+
+## Testing Framework (Vitest + TypeScript)
+
+**Stack**: Vitest v3.2.4 + better-sqlite3 in-memory + comprehensive Google OAuth mocking
+**Commands**: `pnpm test:oauth`, `pnpm test:coverage`, `./scripts/run-oauth-verification.sh`
+**Coverage**: 50/50 automated tests passing, production-ready validation
+**Database**: Complete schema recreation with `test/database/test-db-setup.ts`
+
+**Critical Test Patterns:**
+- IP variation: Different IPs for concurrent/load testing (avoid rate limits)
+- Timing delays: `setTimeout(1ms)` for timestamp uniqueness in session tests
+- Mock isolation: Reset mocks between tests for clean state
+- Batch operations: Test atomic user+role+audit creation
+- Security scenarios: Token manipulation, rate limiting, CSRF attacks
+
+**Environment**: NODE_ENV=test, JWT_SECRET/GOOGLE_CLIENT_ID/CSRF_SECRET for testing
+
+## Key Implementation Lessons
+
+**Security-First Architecture:**
+- Security middleware BEFORE business logic, fail secure defaults
+- Multi-tier rate limiting (IP+email+global) > single-tier
+- Audit everything: Log success/failure with full context (IP,userAgent,fingerprint)
+
+**Database Patterns:**
+- Atomic operations: User creation = user+role+audit batch
+- Indexes critical: All auth queries use indexed fields (email,googleId,jti)
+- JTI revocation from day 1, not afterthought
+
+**Frontend Security:**
+- Device fingerprinting comprehensive but graceful fallback
+- HttpOnly cookies > localStorage for XSS protection
+- Auto-refresh: Check 5min, refresh if <30min expiry
+
+**Error Handling:**
+- Standardized format: `{error:"code", details:"message"}` across endpoints
+- Specialized classes: APIError, AuthenticationError, AuthorizationError, RateLimitError
+
+**Performance Constraints:**
+- JWT size: Keep role arrays small, paginate if many roles
+- Token refresh timing: 30min warning prevents jarring logout
+- Bundle optimization: hono/jwt > external libs for CF Workers

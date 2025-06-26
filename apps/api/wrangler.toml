@@ -3,8 +3,62 @@ main = "src/index.ts"
 compatibility_date = "2025-06-25"
 minify = true
 
+# Environment variables for development
+[vars]
+NODE_ENV = "development"
+
+# D1 Database configuration
 [[d1_databases]]
 binding = "DB" # This binding will be available in the Worker on `env.DB`
 database_name = "treksistem-db-mvp"
 database_id = "YOUR_D1_DATABASE_ID_HERE" # Replace with your actual D1 DB ID
 migrations_dir = "../../packages/db/migrations"
+
+# Production environment configuration
+[env.production]
+name = "treksistem-api-production"
+[env.production.vars]
+NODE_ENV = "production"
+
+# Production D1 Database
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "treksistem-db-production"
+database_id = "YOUR_PRODUCTION_D1_DATABASE_ID_HERE"
+migrations_dir = "../../packages/db/migrations"
+
+# Staging environment configuration
+[env.staging]
+name = "treksistem-api-staging"
+[env.staging.vars]
+NODE_ENV = "staging"
+
+# Staging D1 Database
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "treksistem-db-staging"
+database_id = "YOUR_STAGING_D1_DATABASE_ID_HERE"
+migrations_dir = "../../packages/db/migrations"
+
+# Security and authentication secrets
+# These should be set using: wrangler secret put <SECRET_NAME>
+#
+# Required secrets:
+# - JWT_SECRET: Strong random string for JWT signing (min 32 chars)
+# - GOOGLE_CLIENT_ID: Google OAuth 2.0 Client ID
+# - CSRF_SECRET: CSRF protection secret (optional, will use default if not set)
+#
+# Example commands to set secrets:
+# wrangler secret put JWT_SECRET
+# wrangler secret put GOOGLE_CLIENT_ID
+# wrangler secret put CSRF_SECRET
+#
+# For production environment:
+# wrangler secret put JWT_SECRET --env production
+# wrangler secret put GOOGLE_CLIENT_ID --env production
+# wrangler secret put CSRF_SECRET --env production
+#
+# For staging environment:
+# wrangler secret put JWT_SECRET --env staging
+# wrangler secret put GOOGLE_CLIENT_ID --env staging
+# wrangler secret put CSRF_SECRET --env staging

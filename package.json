@@ -13,12 +13,17 @@
     "lint": "pnpm --filter=@treksistem/* lint",
     "lint:fix": "pnpm --filter=@treksistem/* lint:fix",
     "format": "pnpm --filter=@treksistem/* format",
-    "test": "pnpm --filter=@treksistem/* test",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:oauth": "vitest run test/oauth",
     "type-check": "tsc --build",
     "clean": "pnpm --filter=@treksistem/* clean && rm -rf node_modules/.cache",
     "prepare": "husky"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.0.0",
@@ -51,6 +56,16 @@
     }
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.2"
+    "@hono/zod-validator": "^0.3.0",
+    "@vitest/ui": "^3.2.4",
+    "better-sqlite3": "^12.1.1",
+    "c8": "^10.1.3",
+    "drizzle-orm": "^0.44.2",
+    "google-auth-library": "^9.14.1",
+    "happy-dom": "^18.0.1",
+    "hono": "^4.0.0",
+    "nanoid": "^5.1.5",
+    "vitest": "^3.2.4",
+    "zod": "^3.22.4"
   }
 }

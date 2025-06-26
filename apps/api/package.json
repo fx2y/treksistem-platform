@@ -11,12 +11,17 @@
     "lint": "eslint src/ --cache",
     "lint:fix": "eslint src/ --cache --fix",
     "format": "prettier --write .",
-    "test": "echo 'No tests yet'"
+    "test": "vitest run --config ../../vitest.config.ts --dir src"
   },
   "dependencies": {
     "@treksistem/db": "workspace:*",
+    "@treksistem/utils": "workspace:*",
     "drizzle-orm": "^0.44.2",
-    "hono": "^4.0.0"
+    "hono": "^4.0.0",
+    "google-auth-library": "^9.14.1",
+    "@hono/zod-validator": "^0.3.0",
+    "zod": "^3.22.4",
+    "nanoid": "^5.0.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",

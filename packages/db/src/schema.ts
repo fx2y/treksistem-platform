@@ -4,6 +4,7 @@ import {
   sqliteTable,
   text,
   uniqueIndex,
+  index,
 } from 'drizzle-orm/sqlite-core';
 import type { UserId } from '@treksistem/utils';
 
@@ -22,6 +23,11 @@ export const users = sqliteTable(
     fullName: text('full_name'),
     avatarUrl: text('avatar_url'),
     googleId: text('google_id').notNull().unique(),
+    emailVerified: integer('email_verified', { mode: 'boolean' })
+      .notNull()
+      .default(false),
+    lastActivity: integer('last_activity', { mode: 'timestamp' })
+      .$defaultFn(() => new Date()),
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -34,6 +40,7 @@ export const users = sqliteTable(
     uniqueIndex('users_public_id_idx').on(table.publicId),
     uniqueIndex('users_email_idx').on(table.email),
     uniqueIndex('users_google_id_idx').on(table.googleId),
+    index('users_last_activity_idx').on(table.lastActivity),
   ]
 );
 
@@ -64,13 +71,70 @@ export const userRoles = sqliteTable(
   ]
 );
 
+// Session revocation table for JWT blacklisting
+export const sessionRevocations = sqliteTable(
+  'session_revocations',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    jti: text('jti').notNull().unique(), // JWT ID for revocation tracking
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    revokedAt: integer('revoked_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    reason: text('reason'), // Optional reason for revocation
+  },
+  table => [
+    uniqueIndex('session_revocations_jti_idx').on(table.jti),
+    index('session_revocations_expires_at_idx').on(table.expiresAt),
+    index('session_revocations_user_id_idx').on(table.userId),
+  ]
+);
+
+// Audit log table for security monitoring
+export const auditLogs = sqliteTable(
+  'audit_logs',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: integer('user_id')
+      .references(() => users.id, { onDelete: 'set null' }),
+    action: text('action').notNull(), // e.g., 'login', 'logout', 'token_refresh'
+    email: text('email'), // Email involved in the action
+    ipAddress: text('ip_address'),
+    userAgent: text('user_agent'),
+    success: integer('success', { mode: 'boolean' }).notNull(),
+    details: text('details'), // JSON string for additional context
+    timestamp: integer('timestamp', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  table => [
+    index('audit_logs_user_id_idx').on(table.userId),
+    index('audit_logs_action_idx').on(table.action),
+    index('audit_logs_timestamp_idx').on(table.timestamp),
+    index('audit_logs_email_idx').on(table.email),
+    index('audit_logs_ip_address_idx').on(table.ipAddress),
+  ]
+);
+
 // Relations for relational queries
 export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
+  sessionRevocations: many(sessionRevocations),
+  auditLogs: many(auditLogs),
 }));
 
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
   user: one(users, { fields: [userRoles.userId], references: [users.id] }),
+}));
+
+export const sessionRevocationsRelations = relations(sessionRevocations, ({ one }) => ({
+  user: one(users, { fields: [sessionRevocations.userId], references: [users.id] }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
 }));
 
 // Type inference helpers
@@ -78,6 +142,10 @@ export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type UserRole = typeof userRoles.$inferSelect;
 export type NewUserRole = typeof userRoles.$inferInsert;
+export type SessionRevocation = typeof sessionRevocations.$inferSelect;
+export type NewSessionRevocation = typeof sessionRevocations.$inferInsert;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
 
 // Enhanced types with relations
 export type UserWithRoles = User & {
@@ -86,4 +154,18 @@ export type UserWithRoles = User & {
 
 export type UserRoleWithUser = UserRole & {
   user: User;
+};
+
+export type UserWithAuditHistory = User & {
+  userRoles: UserRole[];
+  sessionRevocations: SessionRevocation[];
+  auditLogs: AuditLog[];
+};
+
+export type SessionRevocationWithUser = SessionRevocation & {
+  user: User | null;
+};
+
+export type AuditLogWithUser = AuditLog & {
+  user: User | null;
 };

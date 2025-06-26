@@ -11,13 +11,16 @@
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "start": "next start",
-    "test": "echo 'No tests yet'",
+    "test": "vitest run --config ../../vitest.config.ts --dir src",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@radix-ui/react-slot": "^1.1.1",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@react-oauth/google": "^0.12.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "js-cookie": "^3.0.5",
     "lucide-react": "^0.460.0",
     "next": "^15.1.8",
     "react": "^18.3.1",
@@ -26,12 +29,13 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
     "@treksistem/eslint-config-custom": "workspace:*",
     "@treksistem/tsconfig": "workspace:*",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^22.10.2",
     "@types/react": "^18.3.17",
     "@types/react-dom": "^18.3.5",
-    "@tailwindcss/typography": "^0.5.15",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
     "postcss": "^8.5.1",

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { AuthWrapper, AuthErrorBoundary } from '@/components/auth';
+import { SecurityInitializer } from '@/components/SecurityInitializer';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -38,12 +40,24 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <meta name="referrer" content="strict-origin-when-cross-origin" />
+        <meta httpEquiv="X-Content-Type-Options" content="nosniff" />
+        <meta httpEquiv="X-Frame-Options" content="DENY" />
+      </head>
       <body className={inter.className} suppressHydrationWarning>
-        <main className="min-h-screen bg-background text-foreground antialiased">
-          {children}
-        </main>
+        <SecurityInitializer />
+        <AuthErrorBoundary>
+          <AuthWrapper googleClientId={googleClientId}>
+            <main className="min-h-screen bg-background text-foreground antialiased">
+              {children}
+            </main>
+          </AuthWrapper>
+        </AuthErrorBoundary>
       </body>
     </html>
   );
