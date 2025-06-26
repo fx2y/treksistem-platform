@@ -1,19 +1,24 @@
 /**
  * @fileoverview Test Database Setup for OAuth Verification
- * 
+ *
  * Sets up an in-memory SQLite database with the complete schema
  * for testing OAuth authentication flows
  */
 
-import Database from 'better-sqlite3'
-import { drizzle } from 'drizzle-orm/better-sqlite3'
-import * as schema from '@treksistem/db/schema'
-import type { NewUser, NewUserRole, NewAuditLog, NewSessionRevocation } from '@treksistem/db/schema'
-import { generateUserId } from '@treksistem/utils'
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as schema from '@treksistem/db/schema';
+import type {
+  NewUser,
+  NewUserRole,
+  NewAuditLog,
+  NewSessionRevocation,
+} from '@treksistem/db/schema';
+import { generateUserId } from '@treksistem/utils';
 
 // Create in-memory database for testing
-const sqlite = new Database(':memory:')
-export const testDb = drizzle(sqlite, { schema })
+const sqlite = new Database(':memory:');
+export const testDb = drizzle(sqlite, { schema });
 
 // SQL to create tables - extracted from migrations
 export const createTablesSQL = `
@@ -86,24 +91,24 @@ CREATE INDEX audit_logs_action_idx ON audit_logs(action);
 CREATE INDEX audit_logs_timestamp_idx ON audit_logs(timestamp);
 CREATE INDEX audit_logs_email_idx ON audit_logs(email);
 CREATE INDEX audit_logs_ip_address_idx ON audit_logs(ip_address);
-`
+`;
 
-export async function initializeTestDatabase() {
+export function initializeTestDatabase() {
   // Execute all table creation statements
-  const statements = createTablesSQL.split(';').filter(s => s.trim())
-  
+  const statements = createTablesSQL.split(';').filter(s => s.trim());
+
   for (const statement of statements) {
     if (statement.trim()) {
-      sqlite.exec(statement)
+      sqlite.exec(statement);
     }
   }
-  
-  console.log('✅ Test database initialized with complete schema')
+
+  console.log('✅ Test database initialized with complete schema');
 }
 
 export async function seedTestData() {
-  const now = new Date()
-  
+  const now = new Date();
+
   // Create test users
   const testUsers: NewUser[] = [
     {
@@ -114,7 +119,7 @@ export async function seedTestData() {
       emailVerified: true,
       lastActivity: now,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     },
     {
       publicId: generateUserId(),
@@ -124,16 +129,19 @@ export async function seedTestData() {
       emailVerified: true,
       lastActivity: now,
       createdAt: now,
-      updatedAt: now
-    }
-  ]
-  
-  const insertedUsers = []
+      updatedAt: now,
+    },
+  ];
+
+  const insertedUsers = [];
   for (const user of testUsers) {
-    const [insertedUser] = await testDb.insert(schema.users).values(user).returning()
-    insertedUsers.push(insertedUser)
+    const [insertedUser] = await testDb
+      .insert(schema.users)
+      .values(user)
+      .returning();
+    insertedUsers.push(insertedUser);
   }
-  
+
   // Create test roles
   const testRoles: NewUserRole[] = [
     {
@@ -143,7 +151,7 @@ export async function seedTestData() {
       grantedAt: now,
       grantedBy: insertedUsers[1].publicId, // Admin granted the role
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     },
     {
       userId: insertedUsers[1].id,
@@ -152,14 +160,14 @@ export async function seedTestData() {
       grantedAt: now,
       grantedBy: 'system', // System-granted master admin role
       createdAt: now,
-      updatedAt: now
-    }
-  ]
-  
+      updatedAt: now,
+    },
+  ];
+
   for (const role of testRoles) {
-    await testDb.insert(schema.userRoles).values(role)
+    await testDb.insert(schema.userRoles).values(role);
   }
-  
+
   // Create test audit logs
   const testAuditLogs: NewAuditLog[] = [
     {
@@ -169,7 +177,7 @@ export async function seedTestData() {
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
       success: true,
-      timestamp: now
+      timestamp: now,
     },
     {
       userId: insertedUsers[1].id,
@@ -178,64 +186,64 @@ export async function seedTestData() {
       ipAddress: '127.0.0.1',
       userAgent: 'test-agent',
       success: true,
-      timestamp: now
-    }
-  ]
-  
+      timestamp: now,
+    },
+  ];
+
   for (const log of testAuditLogs) {
-    await testDb.insert(schema.auditLogs).values(log)
+    await testDb.insert(schema.auditLogs).values(log);
   }
-  
-  console.log('✅ Test database seeded with sample data')
-  return insertedUsers
+
+  console.log('✅ Test database seeded with sample data');
+  return insertedUsers;
 }
 
 export async function cleanTestDatabase() {
   // Clean all tables in reverse dependency order
-  await testDb.delete(schema.auditLogs)
-  await testDb.delete(schema.sessionRevocations)
-  await testDb.delete(schema.userRoles)
-  await testDb.delete(schema.users)
-  
-  console.log('✅ Test database cleaned')
+  await testDb.delete(schema.auditLogs);
+  await testDb.delete(schema.sessionRevocations);
+  await testDb.delete(schema.userRoles);
+  await testDb.delete(schema.users);
+
+  console.log('✅ Test database cleaned');
 }
 
 export function closeTestDatabase() {
-  sqlite.close()
-  console.log('✅ Test database connection closed')
+  sqlite.close();
+  console.log('✅ Test database connection closed');
 }
 
 // Test database utilities
 export class TestDatabaseManager {
   async setup() {
-    await initializeTestDatabase()
-    return await seedTestData()
+    initializeTestDatabase();
+    return seedTestData();
   }
-  
+
   async cleanup() {
-    await cleanTestDatabase()
+    await cleanTestDatabase();
   }
-  
+
   async reset() {
-    await this.cleanup()
-    return await seedTestData()
+    await this.cleanup();
+    return await seedTestData();
   }
-  
+
   getDb() {
-    return testDb
+    return testDb;
   }
-  
-  async close() {
-    closeTestDatabase()
+
+  close() {
+    closeTestDatabase();
   }
 }
 
 // Export singleton instance
-export const testDbManager = new TestDatabaseManager()
+export const testDbManager = new TestDatabaseManager();
 
 // Integration test helpers
 export async function createTestUser(overrides: Partial<NewUser> = {}) {
-  const now = new Date()
+  const now = new Date();
   const defaultUser: NewUser = {
     publicId: generateUserId(),
     email: `test-${Date.now()}@example.com`,
@@ -245,15 +253,23 @@ export async function createTestUser(overrides: Partial<NewUser> = {}) {
     lastActivity: now,
     createdAt: now,
     updatedAt: now,
-    ...overrides
-  }
-  
-  const [user] = await testDb.insert(schema.users).values(defaultUser).returning()
-  return user
+    ...overrides,
+  };
+
+  const [user] = await testDb
+    .insert(schema.users)
+    .values(defaultUser)
+    .returning();
+  return user;
 }
 
-export async function createTestUserRole(userId: number, role: schema.Role = 'DRIVER', contextId: string | null = null, grantedBy: string = 'system') {
-  const now = new Date()
+export async function createTestUserRole(
+  userId: number,
+  role: schema.Role = 'DRIVER',
+  contextId: string | null = null,
+  grantedBy: string = 'system'
+) {
+  const now = new Date();
   const userRole: NewUserRole = {
     userId,
     role,
@@ -261,15 +277,22 @@ export async function createTestUserRole(userId: number, role: schema.Role = 'DR
     grantedAt: now,
     grantedBy,
     createdAt: now,
-    updatedAt: now
-  }
-  
-  const [insertedRole] = await testDb.insert(schema.userRoles).values(userRole).returning()
-  return insertedRole
+    updatedAt: now,
+  };
+
+  const [insertedRole] = await testDb
+    .insert(schema.userRoles)
+    .values(userRole)
+    .returning();
+  return insertedRole;
 }
 
-export async function createTestAuditLog(userId: number, action: string, success: boolean = true) {
-  const now = new Date()
+export async function createTestAuditLog(
+  userId: number,
+  action: string,
+  success: boolean = true
+) {
+  const now = new Date();
   const auditLog: NewAuditLog = {
     userId,
     action,
@@ -277,25 +300,34 @@ export async function createTestAuditLog(userId: number, action: string, success
     ipAddress: '127.0.0.1',
     userAgent: 'test-agent',
     success,
-    timestamp: now
-  }
-  
-  const [log] = await testDb.insert(schema.auditLogs).values(auditLog).returning()
-  return log
+    timestamp: now,
+  };
+
+  const [log] = await testDb
+    .insert(schema.auditLogs)
+    .values(auditLog)
+    .returning();
+  return log;
 }
 
-export async function createTestSessionRevocation(jti: string, userId?: number) {
-  const now = new Date()
-  const expiry = new Date(now.getTime() + 4 * 60 * 60 * 1000) // 4 hours from now
-  
+export async function createTestSessionRevocation(
+  jti: string,
+  userId?: number
+) {
+  const now = new Date();
+  const expiry = new Date(now.getTime() + 4 * 60 * 60 * 1000); // 4 hours from now
+
   const revocation: NewSessionRevocation = {
     jti,
     userId: userId || null,
     expiresAt: expiry,
     revokedAt: now,
-    reason: 'test_revocation'
-  }
-  
-  const [revokedSession] = await testDb.insert(schema.sessionRevocations).values(revocation).returning()
-  return revokedSession
+    reason: 'test_revocation',
+  };
+
+  const [revokedSession] = await testDb
+    .insert(schema.sessionRevocations)
+    .values(revocation)
+    .returning();
+  return revokedSession;
 }
