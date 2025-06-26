@@ -35,7 +35,9 @@ CREATE TABLE user_roles (
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
   user_id INTEGER NOT NULL,
   role TEXT NOT NULL,
-  context_id INTEGER,
+  context_id TEXT,
+  granted_at INTEGER NOT NULL,
+  granted_by TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -71,6 +73,9 @@ CREATE UNIQUE INDEX users_google_id_idx ON users(google_id);
 CREATE INDEX users_last_activity_idx ON users(last_activity);
 
 CREATE UNIQUE INDEX user_roles_composite_idx ON user_roles(user_id, role, context_id);
+CREATE INDEX user_roles_context_id_idx ON user_roles(context_id);
+CREATE INDEX user_roles_granted_by_idx ON user_roles(granted_by);
+CREATE INDEX user_roles_granted_at_idx ON user_roles(granted_at);
 
 CREATE UNIQUE INDEX session_revocations_jti_idx ON session_revocations(jti);
 CREATE INDEX session_revocations_expires_at_idx ON session_revocations(expires_at);
@@ -135,6 +140,8 @@ export async function seedTestData() {
       userId: insertedUsers[0].id,
       role: 'DRIVER',
       contextId: null,
+      grantedAt: now,
+      grantedBy: insertedUsers[1].publicId, // Admin granted the role
       createdAt: now,
       updatedAt: now
     },
@@ -142,6 +149,8 @@ export async function seedTestData() {
       userId: insertedUsers[1].id,
       role: 'MASTER_ADMIN',
       contextId: null,
+      grantedAt: now,
+      grantedBy: 'system', // System-granted master admin role
       createdAt: now,
       updatedAt: now
     }
@@ -243,12 +252,14 @@ export async function createTestUser(overrides: Partial<NewUser> = {}) {
   return user
 }
 
-export async function createTestUserRole(userId: number, role: schema.Role = 'DRIVER', contextId: number | null = null) {
+export async function createTestUserRole(userId: number, role: schema.Role = 'DRIVER', contextId: string | null = null, grantedBy: string = 'system') {
   const now = new Date()
   const userRole: NewUserRole = {
     userId,
     role,
     contextId,
+    grantedAt: now,
+    grantedBy,
     createdAt: now,
     updatedAt: now
   }

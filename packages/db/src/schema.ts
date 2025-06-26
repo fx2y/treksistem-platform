@@ -44,7 +44,7 @@ export const users = sqliteTable(
   ]
 );
 
-// User roles table schema
+// User roles table schema - Enhanced for RBAC with audit trail
 export const userRoles = sqliteTable(
   'user_roles',
   {
@@ -53,7 +53,11 @@ export const userRoles = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     role: text('role').notNull().$type<Role>(),
-    contextId: integer('context_id'),
+    contextId: text('context_id'), // Partner public_id for scoped roles (string, not integer)
+    grantedAt: integer('granted_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    grantedBy: text('granted_by').notNull(), // User public_id who granted this role
     createdAt: integer('created_at', { mode: 'timestamp' })
       .notNull()
       .$defaultFn(() => new Date()),
@@ -68,6 +72,9 @@ export const userRoles = sqliteTable(
       table.role,
       table.contextId
     ),
+    index('user_roles_context_id_idx').on(table.contextId),
+    index('user_roles_granted_by_idx').on(table.grantedBy),
+    index('user_roles_granted_at_idx').on(table.grantedAt),
   ]
 );
 

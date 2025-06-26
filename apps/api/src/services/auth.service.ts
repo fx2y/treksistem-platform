@@ -279,6 +279,8 @@ export class ProductionAuthService implements AuthService {
       userId: createdUser[0].id,
       role: 'DRIVER',
       contextId: null,
+      grantedAt: now,
+      grantedBy: 'system', // System-granted for new user registration
       createdAt: now,
       updatedAt: now
     })
@@ -294,9 +296,9 @@ export class ProductionAuthService implements AuthService {
     
     return roles.map(role => ({
       role: role.role,
-      contextId: role.contextId?.toString() || null,
-      grantedAt: Math.floor(role.createdAt.getTime() / 1000),
-      grantedBy: 'system' // For now, system-assigned roles
+      contextId: role.contextId || null,
+      grantedAt: Math.floor(role.grantedAt.getTime() / 1000),
+      grantedBy: role.grantedBy
     }))
   }
   

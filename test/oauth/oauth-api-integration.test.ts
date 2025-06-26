@@ -162,12 +162,15 @@ class MockOAuthAPIService {
     })
     
     // Assign default role
+    const now = new Date()
     await this.db.insert(userRoles).values({
       userId: newUser.id,
       role: 'DRIVER',
       contextId: null,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      grantedAt: now,
+      grantedBy: 'system',
+      createdAt: now,
+      updatedAt: now
     })
     
     return { user: newUser, isNewUser: true }
@@ -180,9 +183,9 @@ class MockOAuthAPIService {
     
     return roles.map(role => ({
       role: role.role,
-      contextId: role.contextId?.toString() || null,
-      grantedAt: Math.floor(role.createdAt.getTime() / 1000),
-      grantedBy: 'system'
+      contextId: role.contextId || null,
+      grantedAt: Math.floor(role.grantedAt.getTime() / 1000),
+      grantedBy: role.grantedBy
     }))
   }
 

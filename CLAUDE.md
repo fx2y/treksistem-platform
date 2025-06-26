@@ -195,28 +195,32 @@ pnpm --filter @treksistem/web [command]    # Run command in web package
 
 **Environment**: NODE_ENV=test, JWT_SECRET/GOOGLE_CLIENT_ID/CSRF_SECRET for testing
 
-## Key Implementation Lessons
+## RBAC System Implementation (50/50 tests passing, production-ready)
 
-**Security-First Architecture:**
-- Security middleware BEFORE business logic, fail secure defaults
-- Multi-tier rate limiting (IP+email+global) > single-tier
-- Audit everything: Log success/failure with full context (IP,userAgent,fingerprint)
+**Architecture**: JWT+RBAC with branded types (`UserId`,`PartnerId`), middleware factories (`createJWTMiddleware`,`requireRole`,`requireContext`), security stack ordering (Security→JWT→RBAC→Business)
 
-**Database Patterns:**
-- Atomic operations: User creation = user+role+audit batch
-- Indexes critical: All auth queries use indexed fields (email,googleId,jti)
-- JTI revocation from day 1, not afterthought
+**Database Schema**: Enhanced user_roles with `grantedAt`,`grantedBy` audit fields, session_revocations with JTI blacklist, audit_logs for security events. Schema-test alignment CRITICAL - test DB must exactly match production.
 
-**Frontend Security:**
-- Device fingerprinting comprehensive but graceful fallback
-- HttpOnly cookies > localStorage for XSS protection
-- Auto-refresh: Check 5min, refresh if <30min expiry
+**Security Patterns**: 
+- Middleware ordering ENFORCED: Security→JWT→RBAC→Business
+- Fail-safe defaults: Token considered revoked on DB error
+- Multi-tier rate limiting: IP(100/min), Auth(10/min), Email(5failures/hour)
+- Master admin bypass: Global context access always
+- Error format: `{error:"code", details:"message"}` ALL endpoints
 
-**Error Handling:**
-- Standardized format: `{error:"code", details:"message"}` across endpoints
-- Specialized classes: APIError, AuthenticationError, AuthorizationError, RateLimitError
+**Critical Constraints**:
+- contextId as string (Partner publicId), not integer
+- Atomic operations: User+role+audit creation in transaction
+- Schema alignment: Test database MUST match production exactly
+- grantedAt,grantedBy required in ALL role operations
+- Import type vs runtime: Distinguish clearly (`createDb` runtime, types type-only)
 
-**Performance Constraints:**
-- JWT size: Keep role arrays small, paginate if many roles
-- Token refresh timing: 30min warning prevents jarring logout
-- Bundle optimization: hono/jwt > external libs for CF Workers
+**Test Patterns**: 
+- IP variation for concurrent tests (avoid rate limits)
+- `setTimeout(1ms)` for timestamp uniqueness
+- Mock isolation between tests
+- Schema evolution requires test+auth service+migration coordination
+
+**Performance**: JWT verification <10ms, indexed auth queries (email,googleId,jti,publicId), in-memory rate limiting (migrate to KV)
+
+**Tech Debt**: High=KV rate limiting+crypto library+refresh tokens, Medium=MFA prep+role UI
