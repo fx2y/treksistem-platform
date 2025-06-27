@@ -33,6 +33,11 @@ interface MasterDataEnv {
   DB: D1Database;
 }
 
+// Type assertion helper
+function getEnvDB(env: unknown): D1Database {
+  return (env as MasterDataEnv).DB;
+}
+
 // Validation schemas
 const createVehicleTypeSchema = z.object({
   name: z.string().min(1).max(100),
@@ -122,9 +127,10 @@ export function createMasterDataRouter() {
   app.get('/', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {
     try {
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const masterData = await masterDataService.getAllMasterData(partnerId || undefined);
@@ -146,9 +152,10 @@ export function createMasterDataRouter() {
   vehicleTypesRouter.get('/', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {
     try {
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const vehicleTypes = await masterDataService.getVehicleTypes(partnerId || undefined);
@@ -169,9 +176,10 @@ export function createMasterDataRouter() {
     try {
       const id = c.req.param('id') as VehicleTypeId;
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const vehicleType = await masterDataService.getVehicleTypeById(id, partnerId || undefined);
@@ -273,9 +281,10 @@ export function createMasterDataRouter() {
   payloadTypesRouter.get('/', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {
     try {
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const payloadTypes = await masterDataService.getPayloadTypes(partnerId || undefined);
@@ -296,9 +305,10 @@ export function createMasterDataRouter() {
     try {
       const id = c.req.param('id') as PayloadTypeId;
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const payloadType = await masterDataService.getPayloadTypeById(id, partnerId || undefined);
@@ -400,9 +410,10 @@ export function createMasterDataRouter() {
   facilitiesRouter.get('/', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {
     try {
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const facilities = await masterDataService.getFacilities(partnerId || undefined);
@@ -423,9 +434,10 @@ export function createMasterDataRouter() {
     try {
       const id = c.req.param('id') as FacilityId;
       const partnerId = c.get('partnerId') as PartnerId | null;
+      const db = getEnvDB(c.env);
       const masterDataService = createMasterDataService(
-        c.env.DB,
-        createMonitoringService(createDb(c.env.DB))
+        db,
+        createMonitoringService(createDb(db))
       );
 
       const facility = await masterDataService.getFacilityById(id, partnerId || undefined);

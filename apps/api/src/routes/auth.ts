@@ -1,7 +1,6 @@
-import { Hono, type Context } from 'hono'
+import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { HTTPException } from 'hono/http-exception'
 import { createAuthService } from '../services/auth.service'
 import { createJWTService } from '../services/jwt.service'
 import { createMonitoringService } from '../services/monitoring.service'
@@ -227,7 +226,7 @@ export function createAuthRouter() {
 
         await monitoring.reportException(error as Error, c, 'medium')
 
-        let statusCode = 401
+        const statusCode = 401
         let errorCode = 'invalid_token'
         let details = 'Token refresh failed'
 
@@ -303,7 +302,7 @@ export function createAuthRouter() {
   )
 
   // User profile endpoint (requires authentication)
-  auth.get('/profile', async (c) => {
+  auth.get('/profile', (c) => {
     try {
       // This endpoint would typically use JWT middleware
       // For now, return placeholder response
@@ -358,34 +357,3 @@ export function createAuthRouter() {
   return auth
 }
 
-// Helper function to handle auth errors consistently
-function handleAuthError(error: Error, c: Context): Response {
-  console.error('Auth error:', error)
-
-  if (error.message.includes('Rate limit')) {
-    return c.json({
-      error: 'rate_limited',
-      details: 'Too many requests'
-    }, 429)
-  }
-
-  if (error.message.includes('Invalid token') || error.message.includes('verification failed')) {
-    return c.json({
-      error: 'invalid_token',
-      details: 'Authentication failed'
-    }, 401)
-  }
-
-  if (error.message.includes('revoked')) {
-    return c.json({
-      error: 'token_revoked',
-      details: 'Token has been revoked'
-    }, 401)
-  }
-
-  // Default to server error
-  return c.json({
-    error: 'auth_service_unavailable',
-    details: 'Authentication service temporarily unavailable'
-  }, 500)
-}

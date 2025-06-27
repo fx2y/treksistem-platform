@@ -119,7 +119,7 @@ export function createRateLimitMiddleware(config: RateLimitConfig): MiddlewareHa
     const key = `rate_limit:${ip}:${isAuthEndpoint ? 'auth' : 'general'}`
     
     try {
-      const { totalRequests, resetTime } = await rateLimitStore.increment(key)
+      const { totalRequests, resetTime } = rateLimitStore.increment(key)
       
       // Add rate limit headers
       c.header('X-RateLimit-Limit', limit.toString())
