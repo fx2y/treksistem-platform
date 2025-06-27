@@ -50,6 +50,7 @@ export type {
   VehicleTypeId,
   PayloadTypeId,
   FacilityId,
+  ServiceId,
 } from './identifiers.js'
 
 // Pre-defined generator functions for common entity types
@@ -63,6 +64,7 @@ export {
   generateVehicleTypeId,
   generatePayloadTypeId,
   generateFacilityId,
+  generateServiceId,
 } from './identifiers.js'
 
 // Re-export everything from identifiers for convenience

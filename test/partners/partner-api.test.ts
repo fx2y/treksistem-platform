@@ -283,6 +283,36 @@ async function createTestUser(
   };
 }
 
+// Helper to refresh user session with updated roles from database
+async function refreshUserSession(
+  db: typeof testDb,
+  testUser: TestUser
+): Promise<TestUser> {
+  // Fetch fresh roles from database
+  const userRoles = await db
+    .select()
+    .from(schema.userRoles)
+    .where(eq(schema.userRoles.userId, testUser.id));
+
+  const freshRoles = userRoles.map(role => ({
+    role: role.role,
+    contextId: role.contextId,
+    grantedAt: role.grantedAt.getTime(),
+    grantedBy: role.grantedBy,
+  }));
+
+  // Create fresh session with updated roles
+  const session: UserSession = {
+    ...testUser.session,
+    roles: freshRoles,
+  };
+
+  return {
+    ...testUser,
+    session,
+  };
+}
+
 // Test Suite
 describe('Partner API Integration Tests', () => {
   beforeAll(async () => {
@@ -300,7 +330,7 @@ describe('Partner API Integration Tests', () => {
   describe('Partner Creation', () => {
     it('should create a partner with automatic role assignment', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
       
@@ -346,7 +376,7 @@ describe('Partner API Integration Tests', () => {
 
     it('should validate unique business registration number', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser1 = await createTestUser(db, { email: 'user1@test.com' });
       const testUser2 = await createTestUser(db, { email: 'user2@test.com' });
@@ -372,7 +402,7 @@ describe('Partner API Integration Tests', () => {
 
     it('should validate unique partner email', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser1 = await createTestUser(db, { email: 'user1@test.com' });
       const testUser2 = await createTestUser(db, { email: 'user2@test.com' });
@@ -398,7 +428,7 @@ describe('Partner API Integration Tests', () => {
 
     it('should handle multiple partners per user', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
 
@@ -428,7 +458,7 @@ describe('Partner API Integration Tests', () => {
   describe('Partner Retrieval', () => {
     it('should retrieve partner with proper access control', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const ownerUser = await createTestUser(db, { email: 'owner@test.com' });
       const otherUser = await createTestUser(db, { email: 'other@test.com' });
@@ -440,8 +470,11 @@ describe('Partner API Integration Tests', () => {
 
       const partner = await partnerService.createPartner(ownerUser.session, createRequest);
 
+      // Refresh user session to include the newly created PARTNER_ADMIN role
+      const refreshedOwnerUser = await refreshUserSession(db, ownerUser);
+
       // Owner should be able to retrieve partner
-      const retrievedPartner = await partnerService.getPartner(partner.publicId, ownerUser.session);
+      const retrievedPartner = await partnerService.getPartner(partner.publicId, refreshedOwnerUser.session);
       expect(retrievedPartner.publicId).toBe(partner.publicId);
 
       // Other user should not have access (this would be handled by the session validation)
@@ -450,7 +483,7 @@ describe('Partner API Integration Tests', () => {
 
     it('should retrieve partners by owner', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
 
@@ -471,11 +504,9 @@ describe('Partner API Integration Tests', () => {
   describe('Partner Updates', () => {
     it('should update partner with proper validation', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
-      const testUser = await createTestUser(db, {
-        roles: [{ role: 'PARTNER_ADMIN', contextId: 'partner_test123' }],
-      });
+      const testUser = await createTestUser(db);
 
       // Create partner first
       const createRequest: CreatePartnerRequest = {
@@ -486,10 +517,8 @@ describe('Partner API Integration Tests', () => {
 
       const partner = await partnerService.createPartner(testUser.session, createRequest);
 
-      // Mock the getUserSession function for update validation
-      // In practice, this would come from the JWT middleware
-      const originalGetUserSession = (partnerService as any).getUserSession;
-      (partnerService as any).getUserSession = async () => testUser.session;
+      // Refresh user session to include the newly created PARTNER_ADMIN role
+      const refreshedTestUser = await refreshUserSession(db, testUser);
 
       const updateRequest: UpdatePartnerRequest = {
         name: 'Updated Name',
@@ -498,7 +527,7 @@ describe('Partner API Integration Tests', () => {
       };
 
       const updatedPartner = await partnerService.updatePartner(
-        testUser.session,
+        refreshedTestUser.session,
         partner.publicId,
         updateRequest
       );
@@ -506,15 +535,12 @@ describe('Partner API Integration Tests', () => {
       expect(updatedPartner.name).toBe('Updated Name');
       expect(updatedPartner.description).toBe('Updated description');
       expect(updatedPartner.subscriptionTier).toBe('PREMIUM');
-      expect(updatedPartner.updatedBy).toBe(testUser.publicId);
-
-      // Restore original function
-      (partnerService as any).getUserSession = originalGetUserSession;
+      expect(updatedPartner.updatedBy).toBe(refreshedTestUser.publicId);
     });
 
     it('should validate business rules during update', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser1 = await createTestUser(db, { email: 'user1@test.com' });
       const testUser2 = await createTestUser(db, { email: 'user2@test.com' });
@@ -530,43 +556,31 @@ describe('Partner API Integration Tests', () => {
         email: 'partner2@test.com',
       });
 
-      // Mock getUserSession for partner1
-      const originalGetUserSession = (partnerService as any).getUserSession;
-      (partnerService as any).getUserSession = async () => ({
-        ...testUser1.session,
-        roles: [{ role: 'PARTNER_ADMIN', contextId: partner1.publicId }],
-      });
+      // Refresh user session to include the newly created PARTNER_ADMIN role
+      const refreshedTestUser1 = await refreshUserSession(db, testUser1);
 
       // Try to update partner1 with partner2's email - should fail
       await expect(
-        partnerService.updatePartner(testUser1.session, partner1.publicId, {
+        partnerService.updatePartner(refreshedTestUser1.session, partner1.publicId, {
           email: 'partner2@test.com',
         })
       ).rejects.toThrow('Partner email');
-
-      // Restore original function
-      (partnerService as any).getUserSession = originalGetUserSession;
     });
   });
 
   describe('Partner Deletion', () => {
     it('should soft delete partner', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
       const partner = await partnerService.createPartner(testUser.session, {
         name: 'Test Partner',
       });
 
-      // Mock getUserSession for deletion
-      const originalGetUserSession = (partnerService as any).getUserSession;
-      (partnerService as any).getUserSession = async () => ({
-        ...testUser.session,
-        roles: [{ role: 'PARTNER_ADMIN', contextId: partner.publicId }],
-      });
+      const refreshedTestUser = await refreshUserSession(db, testUser);
 
-      await partnerService.deletePartner(testUser.session, partner.publicId);
+      await partnerService.deletePartner(refreshedTestUser.session, partner.publicId);
 
       // Verify partner is soft deleted
       const deletedPartner = await db.query.partners.findFirst({
@@ -575,16 +589,13 @@ describe('Partner API Integration Tests', () => {
 
       expect(deletedPartner).toBeDefined();
       expect(deletedPartner!.isActive).toBe(false);
-
-      // Restore original function
-      (partnerService as any).getUserSession = originalGetUserSession;
     });
   });
 
   describe('Subscription Management', () => {
     it('should update subscription tier', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
       const partner = await partnerService.createPartner(testUser.session, {
@@ -592,30 +603,22 @@ describe('Partner API Integration Tests', () => {
         subscriptionTier: 'BASIC',
       });
 
-      // Mock getUserSession
-      const originalGetUserSession = (partnerService as any).getUserSession;
-      (partnerService as any).getUserSession = async () => ({
-        ...testUser.session,
-        roles: [{ role: 'PARTNER_ADMIN', contextId: partner.publicId }],
-      });
+      const refreshedTestUser = await refreshUserSession(db, testUser);
 
       const updatedPartner = await partnerService.updateSubscription(
         partner.publicId,
         'ENTERPRISE',
-        testUser.session
+        refreshedTestUser.session
       );
 
       expect(updatedPartner.subscriptionTier).toBe('ENTERPRISE');
-
-      // Restore original function
-      (partnerService as any).getUserSession = originalGetUserSession;
     });
   });
 
   describe('Business Type Validation', () => {
     it('should accept valid business types', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
 
@@ -635,7 +638,7 @@ describe('Partner API Integration Tests', () => {
   describe('Location Data', () => {
     it('should handle geospatial coordinates', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
 
@@ -654,21 +657,16 @@ describe('Partner API Integration Tests', () => {
   describe('Statistics', () => {
     it('should return partner statistics structure', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
       const partner = await partnerService.createPartner(testUser.session, {
         name: 'Test Partner',
       });
 
-      // Mock getUserSession
-      const originalGetUserSession = (partnerService as any).getUserSession;
-      (partnerService as any).getUserSession = async () => ({
-        ...testUser.session,
-        roles: [{ role: 'PARTNER_ADMIN', contextId: partner.publicId }],
-      });
+      const refreshedTestUser = await refreshUserSession(db, testUser);
 
-      const statistics = await partnerService.getPartnerStatistics(partner.publicId, testUser.session);
+      const statistics = await partnerService.getPartnerStatistics(partner.publicId, refreshedTestUser.session);
 
       expect(statistics).toHaveProperty('activeDrivers');
       expect(statistics).toHaveProperty('activeVehicles');
@@ -676,16 +674,13 @@ describe('Partner API Integration Tests', () => {
       expect(typeof statistics.activeDrivers).toBe('number');
       expect(typeof statistics.activeVehicles).toBe('number');
       expect(typeof statistics.totalOrders).toBe('number');
-
-      // Restore original function
-      (partnerService as any).getUserSession = originalGetUserSession;
     });
   });
 
   describe('Error Handling', () => {
     it('should handle partner not found', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
       const nonExistentPartnerId = generatePartnerId();
@@ -697,7 +692,7 @@ describe('Partner API Integration Tests', () => {
 
     it('should handle user not found', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const nonExistentUserId = generateUserId();
       const mockUserSession: UserSession = {
@@ -721,7 +716,7 @@ describe('Partner API Integration Tests', () => {
   describe('Data Consistency', () => {
     it('should maintain referential integrity', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser = await createTestUser(db);
       const partner = await partnerService.createPartner(testUser.session, {
@@ -743,7 +738,7 @@ describe('Partner API Integration Tests', () => {
 
     it('should handle concurrent operations safely', async () => {
       const db = testDbManager.getDb();
-      const partnerService = createPartnerService(mockD1Database, mockMonitoringService as any);
+      const partnerService = createPartnerService(db, mockMonitoringService as any);
       
       const testUser1 = await createTestUser(db, { email: 'user1@test.com' });
       const testUser2 = await createTestUser(db, { email: 'user2@test.com' });

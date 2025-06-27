@@ -1,6 +1,8 @@
 // Shared TypeScript types for the Treksistem platform
 // Core user and authentication types
 
+import { z } from 'zod';
+
 // Import and re-export branded types from utils (single source of truth)
 import type {
   UserId,
@@ -8,6 +10,17 @@ import type {
   VehicleTypeId,
   PayloadTypeId,
   FacilityId,
+  ServiceId,
+} from '@treksistem/utils';
+
+// Import type guard functions for use in schemas
+import {
+  isVehicleTypeId,
+  isPayloadTypeId,
+  isFacilityId,
+  isPartnerId,
+  isUserId,
+  isServiceId,
 } from '@treksistem/utils';
 
 export type {
@@ -16,6 +29,7 @@ export type {
   VehicleTypeId,
   PayloadTypeId,
   FacilityId,
+  ServiceId,
 } from '@treksistem/utils';
 
 // Re-export type guard functions from utils
@@ -25,6 +39,7 @@ export {
   isFacilityId,
   isPartnerId,
   isUserId,
+  isServiceId,
 } from '@treksistem/utils';
 
 // User role definitions for RBAC system
@@ -458,4 +473,53 @@ export function isBusinessType(value: string): value is BusinessType {
 
 export function isSubscriptionTier(value: string): value is SubscriptionTier {
   return ['BASIC', 'PREMIUM', 'ENTERPRISE'].includes(value as SubscriptionTier)
+}
+
+// Service Management Types
+
+// Service configuration schema for flexible JSON validation
+export const ServiceConfigSchema = z.object({
+  businessModel: z.enum(['PRIVATE', 'PUBLIC']), // 'PRIVATE' (internal only), 'PUBLIC' (listed for anyone)
+  vehicleTypeIds: z.array(z.string().refine(isVehicleTypeId)), // References master_vehicle_types
+  payloadTypeIds: z.array(z.string().refine(isPayloadTypeId)), // References master_payload_types
+  facilityIds: z.array(z.string().refine(isFacilityId)).optional(), // References master_facilities
+  capacity: z.object({
+    maxWeightKg: z.number().positive().optional(),
+    maxItems: z.number().positive().int().optional(),
+  }).optional(),
+  operationalRange: z.object({
+    maxDistanceKm: z.number().positive(),
+  }),
+  orderOptions: z.array(z.enum(['PICKUP_AT_SENDER', 'A_TO_B'])),
+});
+
+// Create service request schema
+export const createServiceSchema = z.object({
+  name: z.string().min(3).max(100),
+  config: ServiceConfigSchema, // Nested validation
+});
+
+// Update service request schema (partial updates allowed)
+export const updateServiceSchema = z.object({
+  name: z.string().min(3).max(100).optional(),
+  config: ServiceConfigSchema.partial().optional(), // Allow partial updates to the config
+  isActive: z.boolean().optional(),
+});
+
+// Infer TypeScript types from Zod schemas
+export type ServiceConfig = z.infer<typeof ServiceConfigSchema>;
+export type CreateServiceRequest = z.infer<typeof createServiceSchema>;
+export type UpdateServiceRequest = z.infer<typeof updateServiceSchema>;
+
+// Service DTO for API responses
+export interface ServiceDTO {
+  publicId: ServiceId;
+  partnerId: PartnerId;
+  name: string;
+  isActive: boolean;
+  config: ServiceConfig; // The validated ServiceConfig object
+  createdAt: string; // ISO8601Timestamp
+  updatedAt: string; // ISO8601Timestamp
+  createdBy: UserId;
+  updatedBy: UserId;
 }

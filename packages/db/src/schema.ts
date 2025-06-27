@@ -11,7 +11,8 @@ import type {
   VehicleTypeId, 
   PayloadTypeId, 
   FacilityId, 
-  PartnerId 
+  PartnerId,
+  ServiceId 
 } from '@treksistem/types';
 
 // Role type definition for TypeScript type safety
@@ -283,6 +284,35 @@ export const masterFacilities = sqliteTable(
   ]
 );
 
+// Services table - Partner-scoped service configurations
+export const services = sqliteTable(
+  'services',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    publicId: text('public_id').notNull().unique().$type<ServiceId>(),
+    partnerId: text('partner_id').notNull().$type<PartnerId>(),
+    name: text('name').notNull(),
+    config: text('config').notNull(), // JSON string for flexible configuration
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    // Audit fields
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdateFn(() => new Date()),
+    createdBy: text('created_by').notNull().$type<UserId>(),
+    updatedBy: text('updated_by').notNull().$type<UserId>(),
+  },
+  table => [
+    uniqueIndex('services_public_id_idx').on(table.publicId),
+    index('services_partner_id_idx').on(table.partnerId),
+    index('services_active_idx').on(table.isActive),
+    index('services_name_idx').on(table.name),
+  ]
+);
+
 // Relations for relational queries
 export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
@@ -304,7 +334,7 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 }));
 
 // Partners relations
-export const partnersRelations = relations(partners, ({ one }) => ({
+export const partnersRelations = relations(partners, ({ one, many }) => ({
   owner: one(users, { fields: [partners.ownerUserId], references: [users.id] }),
   creator: one(users, { 
     fields: [partners.createdBy], 
@@ -314,6 +344,7 @@ export const partnersRelations = relations(partners, ({ one }) => ({
     fields: [partners.updatedBy], 
     references: [users.publicId] 
   }),
+  services: many(services),
 }));
 
 // Master data relations for audit trails
@@ -346,6 +377,22 @@ export const masterFacilitiesRelations = relations(masterFacilities, ({ one }) =
   }),
   updater: one(users, { 
     fields: [masterFacilities.updatedBy], 
+    references: [users.publicId] 
+  }),
+}));
+
+// Services relations
+export const servicesRelations = relations(services, ({ one }) => ({
+  partner: one(partners, { 
+    fields: [services.partnerId], 
+    references: [partners.publicId] 
+  }),
+  creator: one(users, { 
+    fields: [services.createdBy], 
+    references: [users.publicId] 
+  }),
+  updater: one(users, { 
+    fields: [services.updatedBy], 
     references: [users.publicId] 
   }),
 }));
@@ -403,6 +450,10 @@ export type NewMasterPayloadType = typeof masterPayloadTypes.$inferInsert;
 export type MasterFacility = typeof masterFacilities.$inferSelect;
 export type NewMasterFacility = typeof masterFacilities.$inferInsert;
 
+// Services type inference helpers
+export type Service = typeof services.$inferSelect;
+export type NewService = typeof services.$inferInsert;
+
 // Enhanced master data types with relations
 export type MasterVehicleTypeWithAudit = MasterVehicleType & {
   creator: User | null;
@@ -415,6 +466,17 @@ export type MasterPayloadTypeWithAudit = MasterPayloadType & {
 };
 
 export type MasterFacilityWithAudit = MasterFacility & {
+  creator: User | null;
+  updater: User | null;
+};
+
+// Enhanced service types with relations
+export type ServiceWithPartner = Service & {
+  partner: Partner;
+};
+
+export type ServiceWithAudit = Service & {
+  partner: Partner;
   creator: User | null;
   updater: User | null;
 };

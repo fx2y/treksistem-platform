@@ -38,7 +38,7 @@ import {
   type SubscriptionTier,
   type PaginatedResponse,
 } from '@treksistem/types';
-import { and, eq, or, isNull, sql, desc, like, count } from 'drizzle-orm';
+import { and, eq, or, isNull, sql, desc, like, count, ne } from 'drizzle-orm';
 import type { MonitoringService } from './monitoring.service';
 
 // Service error types for consistent error handling
@@ -112,10 +112,13 @@ export interface PartnerService {
  * Creates a partner service instance
  */
 export function createPartnerService(
-  d1Database: D1Database,
+  d1DatabaseOrDb: D1Database | any,
   monitoring: MonitoringService
 ): PartnerService {
-  const db = createDb(d1Database);
+  // Support both D1Database and direct drizzle instance for testing
+  const db = typeof d1DatabaseOrDb.select === 'function' 
+    ? d1DatabaseOrDb 
+    : createDb(d1DatabaseOrDb);
 
   // Helper function to check if user is master admin
   const isMasterAdmin = (user: UserSession): boolean => {
@@ -230,12 +233,12 @@ export function createPartnerService(
     const existing = await db.query.partners.findFirst({
       where: and(
         eq(partners.businessRegistrationNumber, registrationNumber),
-        excludePartnerId ? eq(partners.publicId, excludePartnerId) : undefined
+        excludePartnerId ? ne(partners.publicId, excludePartnerId) : undefined
       ),
       columns: { publicId: true }
     });
     
-    if (existing && existing.publicId !== excludePartnerId) {
+    if (existing) {
       throw new PartnerConflictError(
         `Business registration number '${registrationNumber}' is already in use`
       );
@@ -251,12 +254,12 @@ export function createPartnerService(
     const existing = await db.query.partners.findFirst({
       where: and(
         eq(partners.email, email),
-        excludePartnerId ? eq(partners.publicId, excludePartnerId) : undefined
+        excludePartnerId ? ne(partners.publicId, excludePartnerId) : undefined
       ),
       columns: { publicId: true }
     });
     
-    if (existing && existing.publicId !== excludePartnerId) {
+    if (existing) {
       throw new PartnerConflictError(
         `Partner email '${email}' is already in use`
       );
