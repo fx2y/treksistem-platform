@@ -15,10 +15,9 @@
  * Similar patterns for payload-types and facilities
  */
 
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createDb } from '@treksistem/db';
 import { createMasterDataService, MasterDataError } from '../services/master-data.service';
@@ -93,7 +92,7 @@ const updateFacilitySchema = z.object({
 // Error handler helper
 function handleServiceError(error: unknown): HTTPException {
   if (error instanceof MasterDataError) {
-    return new HTTPException(error.statusCode, {
+    return new HTTPException(error.statusCode as 400 | 401 | 403 | 404 | 409 | 500, {
       message: JSON.stringify({
         error: error.code,
         details: error.message,
@@ -198,7 +197,7 @@ export function createMasterDataRouter() {
     ...createMasterDataMiddlewareStack('create'),
     async (c: Context) => {
       try {
-        const data = c.req.valid('json');
+        const data = c.req.valid('json' as never);
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -226,7 +225,7 @@ export function createMasterDataRouter() {
     async (c: Context) => {
       try {
         const id = c.req.param('id') as VehicleTypeId;
-        const data = c.req.valid('json');
+        const data = c.req.valid('json' as never);
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -325,7 +324,7 @@ export function createMasterDataRouter() {
     ...createMasterDataMiddlewareStack('create'),
     async (c: Context) => {
       try {
-        const data = c.req.valid('json');
+        const data = c.req.valid('json' as never);
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -353,7 +352,7 @@ export function createMasterDataRouter() {
     async (c: Context) => {
       try {
         const id = c.req.param('id') as PayloadTypeId;
-        const data = c.req.valid('json');
+        const data = c.req.valid('json' as never);
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -452,7 +451,7 @@ export function createMasterDataRouter() {
     ...createMasterDataMiddlewareStack('create'),
     async (c: Context) => {
       try {
-        const data = c.req.valid('json');
+        const data = c.req.valid('json' as never);
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -480,7 +479,7 @@ export function createMasterDataRouter() {
     async (c: Context) => {
       try {
         const id = c.req.param('id') as FacilityId;
-        const data = c.req.valid('json');
+        const data = c.req.valid('json' as never);
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -538,7 +537,9 @@ export function createMasterDataRouter() {
       
       // Simple database connectivity test
       const start = Date.now();
-      await db.select().from(createDb(c.env.DB)._.schema.masterVehicleTypes).limit(1);
+      await db.query.masterVehicleTypes.findFirst({
+        columns: { id: true }
+      });
       const responseTime = Date.now() - start;
 
       return c.json({

@@ -9,6 +9,7 @@ import { sql } from 'drizzle-orm';
 // Import authentication and security components
 import { createAuthRouter } from './routes/auth';
 import { createMasterDataRouter } from './routes/master-data';
+import { createPartnerRouter } from './routes/partners';
 import { createSecurityMiddlewareStack } from './middleware/security';
 import {
   createMonitoringService,
@@ -176,6 +177,9 @@ v1.route('/auth', createAuthRouter());
 
 // Master data routes (require authentication and proper RBAC)
 v1.route('/master-data', createMasterDataRouter());
+
+// Partner management routes (require authentication and proper RBAC)
+v1.route('/partners', createPartnerRouter());
 
 // Protected API endpoints (require authentication)
 const protectedV1 = v1.basePath('/protected');
@@ -368,6 +372,7 @@ app.get('/', c => {
       health: '/api/v1/ping',
       auth: '/api/v1/auth/*',
       masterData: '/api/v1/master-data/*',
+      partners: '/api/v1/partners/*',
       protected: '/api/v1/protected/*',
     },
   });

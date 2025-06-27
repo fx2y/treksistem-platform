@@ -1,4 +1,4 @@
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { HTTPException } from 'hono/http-exception'
@@ -6,7 +6,7 @@ import { createAuthService } from '../services/auth.service'
 import { createJWTService, extractUserInfo } from '../services/jwt.service'
 import { createMonitoringService } from '../services/monitoring.service'
 import { getSecurityContext, getClientIP } from '../middleware/security'
-import type { createDb } from '@treksistem/db'
+import { createDb } from '@treksistem/db'
 
 // Environment bindings interface
 interface Env {
@@ -109,7 +109,13 @@ export function createAuthRouter() {
         // Prepare response
         const response: AuthSuccessResponse = {
           jwt,
-          user: extractUserInfo(authResult.user),
+          user: {
+            id: authResult.user.sub,
+            email: authResult.user.email,
+            name: authResult.user.name,
+            picture: authResult.user.picture,
+            roles: authResult.user.roles
+          },
           session: {
             expiresAt,
             refreshable: true
@@ -131,15 +137,16 @@ export function createAuthRouter() {
         let errorCode = 'auth_service_unavailable'
         let details = 'Internal server error'
 
-        if (error.message.includes('Rate limit')) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('Rate limit')) {
           statusCode = 429
           errorCode = 'rate_limited'
           details = 'Too many authentication attempts'
-        } else if (error.message.includes('verification failed') || error.message.includes('Invalid token')) {
+        } else if (errorMessage.includes('verification failed') || errorMessage.includes('Invalid token')) {
           statusCode = 401
           errorCode = 'invalid_token'
           details = 'Google token verification failed'
-        } else if (error.message.includes('Token has been revoked')) {
+        } else if (errorMessage.includes('Token has been revoked')) {
           statusCode = 401
           errorCode = 'token_revoked'
           details = 'Authentication token has been revoked'
@@ -151,7 +158,7 @@ export function createAuthRouter() {
           ip: getClientIP(c),
           userAgent: c.req.header('user-agent'),
           details: {
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             fingerprint,
             errorCode
           },
@@ -167,7 +174,7 @@ export function createAuthRouter() {
           details: details
         }
 
-        return c.json(errorResponse, statusCode)
+        return c.json(errorResponse, statusCode as 500 | 401 | 429)
       }
     }
   )
@@ -224,10 +231,11 @@ export function createAuthRouter() {
         let errorCode = 'invalid_token'
         let details = 'Token refresh failed'
 
-        if (error.message.includes('revoked')) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('revoked')) {
           errorCode = 'token_revoked'
           details = 'Token has been revoked'
-        } else if (error.message.includes('expired')) {
+        } else if (errorMessage.includes('expired')) {
           errorCode = 'token_expired'
           details = 'Token has expired'
         }
@@ -237,7 +245,7 @@ export function createAuthRouter() {
           details
         }
 
-        return c.json(errorResponse, statusCode)
+        return c.json(errorResponse, statusCode as 500 | 401 | 429)
       }
     }
   )

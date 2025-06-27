@@ -290,7 +290,7 @@ export class ProductionMonitoringService implements MonitoringService {
       } catch (error) {
         checks.database = { 
           status: 'error',
-          error: error.message 
+          error: error instanceof Error ? error.message : String(error)
         }
       }
     }
@@ -302,7 +302,7 @@ export class ProductionMonitoringService implements MonitoringService {
     } catch (error) {
       checks.jwt = { 
         status: 'error',
-        error: error.message 
+        error: error instanceof Error ? error.message : String(error)
       }
     }
 

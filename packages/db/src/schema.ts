@@ -131,6 +131,56 @@ export const auditLogs = sqliteTable(
   ]
 );
 
+// Partners table - Core partner entity management
+export const partners = sqliteTable(
+  'partners',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    publicId: text('public_id').notNull().unique().$type<PartnerId>(),
+    ownerUserId: integer('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    businessType: text('business_type').$type<'UMKM' | 'CORPORATION' | 'INDIVIDUAL'>(),
+    description: text('description'),
+    address: text('address'),
+    phoneNumber: text('phone_number'),
+    email: text('email'),
+    websiteUrl: text('website_url'),
+    logoUrl: text('logo_url'),
+    locationLat: text('location_lat', { mode: 'text' }).$type<number>(),
+    locationLng: text('location_lng', { mode: 'text' }).$type<number>(),
+    businessRegistrationNumber: text('business_registration_number'),
+    taxIdentificationNumber: text('tax_identification_number'),
+    subscriptionTier: text('subscription_tier')
+      .notNull()
+      .default('BASIC')
+      .$type<'BASIC' | 'PREMIUM' | 'ENTERPRISE'>(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    maxDrivers: integer('max_drivers').notNull().default(10),
+    maxVehicles: integer('max_vehicles').notNull().default(5),
+    // Audit fields
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdateFn(() => new Date()),
+    createdBy: text('created_by').notNull().$type<UserId>(),
+    updatedBy: text('updated_by').notNull().$type<UserId>(),
+  },
+  table => [
+    uniqueIndex('partners_public_id_idx').on(table.publicId),
+    index('partners_owner_user_id_idx').on(table.ownerUserId),
+    index('partners_active_idx').on(table.isActive),
+    index('partners_subscription_tier_idx').on(table.subscriptionTier),
+    index('partners_business_type_idx').on(table.businessType),
+    index('partners_email_idx').on(table.email),
+    index('partners_business_registration_number_idx').on(table.businessRegistrationNumber),
+  ]
+);
+
 // Master data tables for partner-scoped configuration
 
 // Master vehicle types table - Partner-scoped or global vehicle configurations
@@ -238,6 +288,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
   sessionRevocations: many(sessionRevocations),
   auditLogs: many(auditLogs),
+  ownedPartners: many(partners),
 }));
 
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
@@ -250,6 +301,19 @@ export const sessionRevocationsRelations = relations(sessionRevocations, ({ one 
 
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
+}));
+
+// Partners relations
+export const partnersRelations = relations(partners, ({ one }) => ({
+  owner: one(users, { fields: [partners.ownerUserId], references: [users.id] }),
+  creator: one(users, { 
+    fields: [partners.createdBy], 
+    references: [users.publicId] 
+  }),
+  updater: one(users, { 
+    fields: [partners.updatedBy], 
+    references: [users.publicId] 
+  }),
 }));
 
 // Master data relations for audit trails
@@ -295,6 +359,8 @@ export type SessionRevocation = typeof sessionRevocations.$inferSelect;
 export type NewSessionRevocation = typeof sessionRevocations.$inferInsert;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type NewAuditLog = typeof auditLogs.$inferInsert;
+export type Partner = typeof partners.$inferSelect;
+export type NewPartner = typeof partners.$inferInsert;
 
 // Enhanced types with relations
 export type UserWithRoles = User & {
@@ -317,6 +383,16 @@ export type SessionRevocationWithUser = SessionRevocation & {
 
 export type AuditLogWithUser = AuditLog & {
   user: User | null;
+};
+
+export type PartnerWithOwner = Partner & {
+  owner: User;
+};
+
+export type PartnerWithAudit = Partner & {
+  owner: User;
+  creator: User | null;
+  updater: User | null;
 };
 
 // Master data type inference helpers

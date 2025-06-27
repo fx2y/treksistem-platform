@@ -206,7 +206,8 @@ export class ProductionAuthService implements AuthService {
 
       return payload as GoogleIdTokenPayload;
     } catch (error) {
-      throw new Error(`Google token verification failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Google token verification failed: ${errorMessage}`);
     }
   }
 

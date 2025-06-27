@@ -13,12 +13,11 @@
 
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import type { UserSession, PartnerId } from '@treksistem/types';
+import type { UserSession, PartnerId, VehicleTypeId, PayloadTypeId, FacilityId } from '@treksistem/types';
 import { createDb } from '@treksistem/db';
 import { masterVehicleTypes, masterPayloadTypes, masterFacilities } from '@treksistem/db';
 import { eq } from 'drizzle-orm';
 import { createMonitoringService } from '../services/monitoring.service';
-import { getClientIP } from './security';
 
 // Environment bindings interface for master data middleware
 interface MasterDataEnv {
@@ -135,32 +134,35 @@ export function validateResourceOwnership(
       let resourceRecord: any = null;
       
       switch (resourceType) {
-        case 'vehicle-types':
+        case 'vehicle-types': {
           const vehicleRecord = await db
             .select()
             .from(masterVehicleTypes)
-            .where(eq(masterVehicleTypes.publicId, resourceId))
+            .where(eq(masterVehicleTypes.publicId, resourceId as VehicleTypeId))
             .limit(1);
           resourceRecord = vehicleRecord[0];
           break;
+        }
           
-        case 'payload-types':
+        case 'payload-types': {
           const payloadRecord = await db
             .select()
             .from(masterPayloadTypes)
-            .where(eq(masterPayloadTypes.publicId, resourceId))
+            .where(eq(masterPayloadTypes.publicId, resourceId as PayloadTypeId))
             .limit(1);
           resourceRecord = payloadRecord[0];
           break;
+        }
           
-        case 'facilities':
+        case 'facilities': {
           const facilityRecord = await db
             .select()
             .from(masterFacilities)
-            .where(eq(masterFacilities.publicId, resourceId))
+            .where(eq(masterFacilities.publicId, resourceId as FacilityId))
             .limit(1);
           resourceRecord = facilityRecord[0];
           break;
+        }
       }
 
       // Resource not found

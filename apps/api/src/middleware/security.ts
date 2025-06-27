@@ -51,10 +51,9 @@ class MemoryRateLimitStore implements RateLimitStore {
 const rateLimitStore = new MemoryRateLimitStore()
 
 // CSRF protection middleware factory
-export function createCSRFMiddleware(origins: string[], secret?: string): MiddlewareHandler {
+export function createCSRFMiddleware(origins: string[]): MiddlewareHandler {
   return csrf({
-    origin: origins,
-    secret: secret || 'default-csrf-secret-change-in-production'
+    origin: origins
   })
 }
 
@@ -243,7 +242,7 @@ export function createSecurityMonitoringMiddleware(
         details: {
           path: c.req.path,
           method: c.req.method,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
         }
       }, db)
@@ -309,7 +308,7 @@ export function createSecurityMiddlewareStack(config: {
     createRateLimitMiddleware(defaultRateLimit),
     
     // CSRF protection
-    createCSRFMiddleware(config.origins, config.csrfSecret),
+    createCSRFMiddleware(config.origins),
     
     // Security monitoring (last to catch all security events)
     createSecurityMonitoringMiddleware(config.db)

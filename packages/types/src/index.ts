@@ -333,3 +333,129 @@ export function isSecurityEventSeverity(value: string): value is SecurityEventSe
 export function isValidMasterDataCategory(value: string): value is 'vehicleTypes' | 'payloadTypes' | 'facilities' {
   return ['vehicleTypes', 'payloadTypes', 'facilities'].includes(value)
 }
+
+// Partner Management Types
+
+// Business type options for partners
+export type BusinessType = 'UMKM' | 'CORPORATION' | 'INDIVIDUAL'
+
+// Subscription tier options
+export type SubscriptionTier = 'BASIC' | 'PREMIUM' | 'ENTERPRISE'
+
+// Partner core interface
+export interface Partner {
+  publicId: PartnerId
+  ownerUserId: number
+  name: string
+  businessType?: BusinessType
+  description?: string
+  address?: string
+  phoneNumber?: string
+  email?: string
+  websiteUrl?: string
+  logoUrl?: string
+  locationLat?: number
+  locationLng?: number
+  businessRegistrationNumber?: string
+  taxIdentificationNumber?: string
+  subscriptionTier: SubscriptionTier
+  isActive: boolean
+  maxDrivers: number
+  maxVehicles: number
+  // Audit fields
+  createdAt: Date
+  updatedAt: Date
+  createdBy: UserId
+  updatedBy: UserId
+}
+
+// Partner statistics interface
+export interface PartnerStatistics {
+  activeDrivers: number
+  activeVehicles: number
+  totalOrders: number
+  monthlyRevenue?: number
+  averageOrderValue?: number
+}
+
+// Partner DTO for API responses
+export interface PartnerDTO {
+  publicId: PartnerId
+  name: string
+  businessType?: BusinessType
+  description?: string
+  address?: string
+  phoneNumber?: string
+  email?: string
+  websiteUrl?: string
+  logoUrl?: string
+  locationLat?: number
+  locationLng?: number
+  businessRegistrationNumber?: string
+  taxIdentificationNumber?: string
+  subscriptionTier: SubscriptionTier
+  isActive: boolean
+  maxDrivers: number
+  maxVehicles: number
+  statistics: PartnerStatistics
+  createdAt: Date
+  updatedAt: Date
+  createdBy: UserId
+  updatedBy: UserId
+}
+
+// Create partner request
+export interface CreatePartnerRequest {
+  name: string
+  businessType?: BusinessType
+  description?: string
+  address?: string
+  phoneNumber?: string
+  email?: string
+  websiteUrl?: string
+  logoUrl?: string
+  locationLat?: number
+  locationLng?: number
+  businessRegistrationNumber?: string
+  taxIdentificationNumber?: string
+  subscriptionTier?: SubscriptionTier
+}
+
+// Update partner request
+export interface UpdatePartnerRequest {
+  name?: string
+  businessType?: BusinessType
+  description?: string
+  address?: string
+  phoneNumber?: string
+  email?: string
+  websiteUrl?: string
+  logoUrl?: string
+  locationLat?: number
+  locationLng?: number
+  businessRegistrationNumber?: string
+  taxIdentificationNumber?: string
+  subscriptionTier?: SubscriptionTier
+  isActive?: boolean
+  maxDrivers?: number
+  maxVehicles?: number
+}
+
+// Partner filters for listing
+export interface PartnerFilters {
+  businessType?: BusinessType
+  subscriptionTier?: SubscriptionTier
+  isActive?: boolean
+  search?: string
+  page?: number
+  limit?: number
+}
+
+// Type guards for partner types
+export function isBusinessType(value: string): value is BusinessType {
+  return ['UMKM', 'CORPORATION', 'INDIVIDUAL'].includes(value as BusinessType)
+}
+
+export function isSubscriptionTier(value: string): value is SubscriptionTier {
+  return ['BASIC', 'PREMIUM', 'ENTERPRISE'].includes(value as SubscriptionTier)
+}

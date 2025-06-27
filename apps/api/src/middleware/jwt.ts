@@ -3,7 +3,7 @@ import { HTTPException } from 'hono/http-exception'
 import { createJWTService, type UserSession } from '../services/jwt.service'
 import { createMonitoringService } from '../services/monitoring.service'
 import { getClientIP } from './security'
-import { createDb } from '@treksistem/db'
+import { createDb, type Role } from '@treksistem/db'
 
 // Environment bindings interface for JWT
 interface JWTEnv {
@@ -146,7 +146,7 @@ export function createJWTMiddleware(options: {
       })
 
       // Determine specific error type
-      let statusCode = 401
+      const statusCode = 401
       let errorCode = 'invalid_token'
       let details = 'Token verification failed'
 
@@ -177,7 +177,7 @@ export function createJWTMiddleware(options: {
 
 // Helper middleware to require specific roles
 export function requireRole(
-  roles: string | string[]
+  roles: Role | Role[]
 ): MiddlewareHandler<{ Bindings: JWTEnv }> {
   const allowedRoles = Array.isArray(roles) ? roles : [roles]
 

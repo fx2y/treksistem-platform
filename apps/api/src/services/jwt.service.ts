@@ -86,14 +86,14 @@ export class ProductionJWTService implements JWTService {
       jti
     }
     
-    const token = await sign(fullPayload, this.secret)
+    const token = await sign(fullPayload as any, this.secret)
     
     return { token, expiresAt: exp, jti }
   }
   
   async verify(token: string): Promise<UserSession> {
     try {
-      const payload = await verify(token, this.secret) as UserSession
+      const payload = await verify(token, this.secret) as any as UserSession
       
       // Check if token is revoked
       if (await this.isRevoked(payload.jti)) {
@@ -113,7 +113,8 @@ export class ProductionJWTService implements JWTService {
       
       return payload
     } catch (error) {
-      throw new Error(`Token verification failed: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Token verification failed: ${errorMessage}`)
     }
   }
   
@@ -130,10 +131,11 @@ export class ProductionJWTService implements JWTService {
       })
     } catch (error) {
       // If it's a unique constraint violation, the token is already revoked
-      if (error.message.includes('UNIQUE constraint failed')) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('UNIQUE constraint failed')) {
         return // Already revoked, which is fine
       }
-      throw new Error(`Failed to revoke token: ${error.message}`)
+      throw new Error(`Failed to revoke token: ${errorMessage}`)
     }
   }
   
