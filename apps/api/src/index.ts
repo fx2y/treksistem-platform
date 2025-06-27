@@ -11,6 +11,7 @@ import { createAuthRouter } from './routes/auth';
 import { createMasterDataRouter } from './routes/master-data';
 import { createPartnerRouter } from './routes/partners';
 import { createServiceRouter } from './routes/services';
+import { createPricingSchemeRouter } from './routes/pricing-schemes';
 import { createSecurityMiddlewareStack } from './middleware/security';
 import {
   createMonitoringService,
@@ -184,6 +185,9 @@ v1.route('/partners', createPartnerRouter());
 
 // Service management routes (require authentication and proper RBAC)
 v1.route('/', createServiceRouter());
+
+// Pricing scheme management routes (require authentication and proper RBAC)
+v1.route('/', createPricingSchemeRouter());
 
 // Protected API endpoints (require authentication)
 const protectedV1 = v1.basePath('/protected');
@@ -378,6 +382,7 @@ app.get('/', c => {
       masterData: '/api/v1/master-data/*',
       partners: '/api/v1/partners/*',
       services: '/api/v1/services/*',
+      pricingSchemes: '/api/v1/services/*/pricing',
       protected: '/api/v1/protected/*',
     },
   });

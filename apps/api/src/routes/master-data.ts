@@ -119,9 +119,7 @@ function handleServiceError(error: unknown): HTTPException {
 export function createMasterDataRouter() {
   const app = new Hono<{ Bindings: MasterDataEnv }>();
 
-  // Apply base middleware to all routes
-  app.use('*', requireAuth); // JWT authentication required
-  app.use('*', validateMasterDataParams()); // Parameter validation
+  // Base middleware is applied per route via createMasterDataMiddlewareStack
 
   // Combined master data endpoint
   app.get('/', ...createMasterDataMiddlewareStack('read'), async (c: Context) => {

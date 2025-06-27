@@ -1,0 +1,8 @@
+{
+  "extends": "./nextjs.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "outDir": "dist"
+  }
+}

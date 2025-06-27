@@ -11,6 +11,7 @@ declare const vehicleTypeIdBrand: unique symbol
 declare const payloadTypeIdBrand: unique symbol
 declare const facilityIdBrand: unique symbol
 declare const serviceIdBrand: unique symbol
+declare const pricingSchemeIdBrand: unique symbol
 
 export type UserId = string & { [userIdBrand]: true }
 export type OrderId = string & { [orderIdBrand]: true }
@@ -22,6 +23,7 @@ export type VehicleTypeId = string & { [vehicleTypeIdBrand]: true }
 export type PayloadTypeId = string & { [payloadTypeIdBrand]: true }
 export type FacilityId = string & { [facilityIdBrand]: true }
 export type ServiceId = string & { [serviceIdBrand]: true }
+export type PricingSchemeId = string & { [pricingSchemeIdBrand]: true }
 
 /**
  * Generates a secure, prefixed, non-sequential public ID with TypeScript branded types.
@@ -146,6 +148,7 @@ export const generateVehicleTypeId = () => generatePublicId<VehicleTypeId>('vt')
 export const generatePayloadTypeId = () => generatePublicId<PayloadTypeId>('pt')
 export const generateFacilityId = () => generatePublicId<FacilityId>('fac')
 export const generateServiceId = () => generatePublicId<ServiceId>('svc')
+export const generatePricingSchemeId = () => generatePublicId<PricingSchemeId>('prc')
 
 // Type guard functions for branded types
 export function isVehicleTypeId(value: string): value is VehicleTypeId {
@@ -170,4 +173,8 @@ export function isUserId(value: string): value is UserId {
 
 export function isServiceId(value: string): value is ServiceId {
   return typeof value === 'string' && value.startsWith('svc_') && isValidPublicId(value)
+}
+
+export function isPricingSchemeId(value: string): value is PricingSchemeId {
+  return typeof value === 'string' && value.startsWith('prc_') && isValidPublicId(value)
 }

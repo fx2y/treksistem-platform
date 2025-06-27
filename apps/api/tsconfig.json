@@ -1,11 +1,12 @@
 {
-  "extends": "@treksistem/tsconfig/node.json",
+  "extends": "@treksistem/tsconfig/project-ref.json",
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["@cloudflare/workers-types"]
+    "types": ["@cloudflare/workers-types"],
+    "outDir": "dist"
   },
   "include": ["src/**/*"]
 }

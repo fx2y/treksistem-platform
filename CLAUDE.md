@@ -23,7 +23,7 @@
 - **Single Source**: @treksistem/utils owns ALL branded types
 - **Re-exports**: Other packages re-export from utils
 - **Format**: `{prefix}_{21-char-nanoid}` (nanoid v5.x)
-- **Types**: UserId, PartnerId, VehicleTypeId, PayloadTypeId, FacilityId
+- **Types**: UserId, PartnerId, VehicleTypeId, PayloadTypeId, FacilityId, ServiceId
 - **Build Order**: utils→types→db→api
 - **Dependencies**: API+DB packages MUST depend on @treksistem/types
 - **Casting**: Explicit `as UserId` at service boundaries only
@@ -62,6 +62,14 @@
 - JSON storage: capabilities/requirements arrays
 - Audit: createdBy,updatedBy,timestamps (user publicId refs)
 - Indexes: partnerId,isActive,displayOrder,name
+
+### Services Schema
+- Table: services (partner-scoped ONLY, never global)
+- Fields: publicId(ServiceId), partnerId(NOT NULL), name, config(JSON), isActive
+- Config: JSON + ServiceConfigSchema validation (businessModel, vehicleTypeIds[], operationalRange)
+- Indexes: publicId, partnerId+isActive, name
+- Constraints: FK to partners.publicId
+- Pattern: Follow master-data exactly (migration + schema.ts + relations)
 
 ### Security Tables
 - session_revocations: JTI blacklist
@@ -127,6 +135,18 @@
 - Audit: `recordAuditEvent(op,user,table,id,partner,changes)`
 - Partner Logic: Extract from user roles, validate ownership
 
+## 5.5 Service Management API
+- Routes: `/api/v1/services/{id}`, `/api/v1/partners/{id}/services` full CRUD
+- Service: `createServiceService(d1,monitoring)`
+- Schema: services table (partner-scoped, NEVER global)
+- Config: JSON column + Zod validation (ServiceConfigSchema)
+- Pattern: **EXACT** master-data replication (service.service.ts template)
+- Context: Complete UserSession passing (NEVER reconstruct auth)
+- Errors: ServiceError hierarchy → HTTP status mapping
+- Middleware: createServiceMiddlewareStack() (Security→JWT→RBAC→Business)
+- Audit: ALL operations + structured events
+- Authorization: Master admin bypass + partner isolation at multiple layers
+
 # 6. Frontend
 ## 6.1 Next.js
 - v15.3 + App Router + Turbopack (NOT `experimental.turbo`)
@@ -167,6 +187,9 @@
 - Mock isolation between tests
 - Type-first: Test interfaces before runtime
 - Incremental: Types→Schema→Services→Routes→Integration
+- Factory Functions: createTestUser(), createTestPartner(), createTestMasterData()
+- Schema Parity: Test DB = production exactly (migrations + indexes + FKs)
+- UserSession Factory: Complete role/context manipulation for service tests
 
 # 8. Development
 ## 8.1 Package Placement
@@ -192,17 +215,22 @@
 - **Security Order**: Security→JWT→RBAC→Business (NEVER change)
 - **Error Format**: `{error:"code", details:"message"}` ALL endpoints
 - **Partner Query**: `WHERE (partnerId IS NULL OR partnerId = ?)` ALL master data
+- **Service Query**: `WHERE partnerId = ?` ALL services (never global)
 - **Service Context**: UserSession objects passed to services, NEVER reconstructed
 - **Audit**: ALL CRUD operations log events
-- **Replication**: Copy existing patterns exactly
+- **Replication**: Copy existing patterns exactly (master-data → services)
+- **JSON Config**: TEXT column + Zod schema validation at API layer
 
 ## 9.2 Architecture Rules
 - Branded types: @treksistem/utils single source
-- Middleware: Factory pattern for reusable stacks
+- Middleware: Factory pattern for reusable stacks (createServiceMiddlewareStack)
 - Services: Explicit dependency injection with complete context
-- Master Admin: Check before partner restrictions
-- Operations: User+role+audit atomic transactions
+- Master Admin: Check before partner restrictions (all authorization middleware)
+- Operations: User+role+audit atomic transactions (db.batch)
 - Testing: Mock at injection points, not internal calls
+- Pattern Template: Use master-data.service.ts as exact template
+- Error Hierarchy: Custom classes → HTTP status (ServiceError → 4xx/5xx)
+- Authorization: Multi-layer (middleware format + service ownership + DB constraints)
 
 ## 9.3 Tech Debt
 - High: KV rate limiting, crypto library, refresh tokens
@@ -232,3 +260,13 @@
 - **ALWAYS**: Pass complete UserSession from route handlers
 - **TESTING**: Mock at dependency boundaries, not method calls
 - **CONTEXT**: Services own business logic, routes own auth context
+- **NEVER**: Define branded types outside @treksistem/utils
+- **NEVER**: Partner-scoped services as global (unlike master data)
+- **NEVER**: JSON config without Zod validation
+- **NEVER**: Skip middleware ordering (Security→JWT→RBAC→Business)
+- **NEVER**: Single-layer authorization (always multi-layer defense)
+- **ALWAYS**: Follow utils→types→db→api dependency chain
+- **ALWAYS**: Use master-data patterns as template for new entities
+- **ALWAYS**: db.batch() for multi-table atomic operations
+- **ALWAYS**: Comprehensive audit logging (recordAuditEvent)
+- **ALWAYS**: Test schema = production schema exactly

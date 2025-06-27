@@ -11,6 +11,7 @@ import type {
   PayloadTypeId,
   FacilityId,
   ServiceId,
+  PricingSchemeId,
 } from '@treksistem/utils';
 
 // Import type guard functions for use in schemas
@@ -18,9 +19,6 @@ import {
   isVehicleTypeId,
   isPayloadTypeId,
   isFacilityId,
-  isPartnerId,
-  isUserId,
-  isServiceId,
 } from '@treksistem/utils';
 
 export type {
@@ -30,6 +28,7 @@ export type {
   PayloadTypeId,
   FacilityId,
   ServiceId,
+  PricingSchemeId,
 } from '@treksistem/utils';
 
 // Re-export type guard functions from utils
@@ -37,9 +36,6 @@ export {
   isVehicleTypeId,
   isPayloadTypeId,
   isFacilityId,
-  isPartnerId,
-  isUserId,
-  isServiceId,
 } from '@treksistem/utils';
 
 // User role definitions for RBAC system
@@ -523,3 +519,6 @@ export interface ServiceDTO {
   createdBy: UserId;
   updatedBy: UserId;
 }
+
+// Pricing Schema Types - Re-export all pricing-related types and schemas
+export * from './schemas/pricing.schema';

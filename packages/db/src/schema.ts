@@ -12,7 +12,8 @@ import type {
   PayloadTypeId, 
   FacilityId, 
   PartnerId,
-  ServiceId 
+  ServiceId,
+  PricingSchemeId 
 } from '@treksistem/types';
 
 // Role type definition for TypeScript type safety
@@ -313,6 +314,40 @@ export const services = sqliteTable(
   ]
 );
 
+// Pricing schemes table - Service-scoped pricing configurations
+export const pricingSchemes = sqliteTable(
+  'pricing_schemes',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    publicId: text('public_id').notNull().unique().$type<PricingSchemeId>(),
+    serviceId: integer('service_id')
+      .notNull()
+      .unique()
+      .references(() => services.id, { onDelete: 'cascade' }),
+    type: text('type')
+      .notNull()
+      .$type<'DISTANCE' | 'PER_ITEM' | 'ZONAL'>(),
+    params: text('params').notNull(), // JSON string for flexible pricing configuration
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    // Audit fields
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp' })
+      .notNull()
+      .$defaultFn(() => new Date())
+      .$onUpdateFn(() => new Date()),
+    createdBy: text('created_by').notNull().$type<UserId>(),
+    updatedBy: text('updated_by').notNull().$type<UserId>(),
+  },
+  table => [
+    uniqueIndex('pricing_schemes_public_id_idx').on(table.publicId),
+    uniqueIndex('pricing_schemes_service_id_idx').on(table.serviceId),
+    index('pricing_schemes_type_idx').on(table.type),
+    index('pricing_schemes_active_idx').on(table.isActive),
+  ]
+);
+
 // Relations for relational queries
 export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
@@ -395,6 +430,26 @@ export const servicesRelations = relations(services, ({ one }) => ({
     fields: [services.updatedBy], 
     references: [users.publicId] 
   }),
+  pricingScheme: one(pricingSchemes, {
+    fields: [services.id],
+    references: [pricingSchemes.serviceId],
+  }),
+}));
+
+// Pricing schemes relations
+export const pricingSchemesRelations = relations(pricingSchemes, ({ one }) => ({
+  service: one(services, {
+    fields: [pricingSchemes.serviceId],
+    references: [services.id],
+  }),
+  creator: one(users, { 
+    fields: [pricingSchemes.createdBy], 
+    references: [users.publicId] 
+  }),
+  updater: one(users, { 
+    fields: [pricingSchemes.updatedBy], 
+    references: [users.publicId] 
+  }),
 }));
 
 // Type inference helpers
@@ -454,6 +509,10 @@ export type NewMasterFacility = typeof masterFacilities.$inferInsert;
 export type Service = typeof services.$inferSelect;
 export type NewService = typeof services.$inferInsert;
 
+// Pricing schemes type inference helpers
+export type PricingScheme = typeof pricingSchemes.$inferSelect;
+export type NewPricingScheme = typeof pricingSchemes.$inferInsert;
+
 // Enhanced master data types with relations
 export type MasterVehicleTypeWithAudit = MasterVehicleType & {
   creator: User | null;
@@ -477,6 +536,22 @@ export type ServiceWithPartner = Service & {
 
 export type ServiceWithAudit = Service & {
   partner: Partner;
+  creator: User | null;
+  updater: User | null;
+};
+
+export type ServiceWithPricingScheme = Service & {
+  partner: Partner;
+  pricingScheme: PricingScheme | null;
+};
+
+// Enhanced pricing scheme types with relations
+export type PricingSchemeWithService = PricingScheme & {
+  service: Service;
+};
+
+export type PricingSchemeWithAudit = PricingScheme & {
+  service: Service;
   creator: User | null;
   updater: User | null;
 };
