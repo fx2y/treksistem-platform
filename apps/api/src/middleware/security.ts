@@ -25,7 +25,7 @@ interface RateLimitStore {
 class MemoryRateLimitStore implements RateLimitStore {
   private store = new Map<string, { count: number; resetTime: number }>()
 
-  async increment(key: string): Promise<{ totalRequests: number; resetTime?: number }> {
+  increment(key: string): { totalRequests: number; resetTime?: number } {
     const now = Date.now()
     const existing = this.store.get(key)
     
@@ -42,7 +42,7 @@ class MemoryRateLimitStore implements RateLimitStore {
     return { totalRequests: existing.count, resetTime: existing.resetTime }
   }
 
-  async reset(key: string): Promise<void> {
+  reset(key: string): void {
     this.store.delete(key)
   }
 }
@@ -320,7 +320,7 @@ async function logSecurityEvent(
   c: Context,
   event: {
     event: string
-    details: Record<string, any>
+    details: Record<string, unknown>
   },
   db?: ReturnType<typeof createDb>
 ): Promise<void> {

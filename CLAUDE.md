@@ -2,7 +2,7 @@
 
 # 1. Architecture
 ## 1.1 Monorepo (PNPM workspaces)
-- apps/api: Cloudflare Worker (Hono.js v4+)  
+- apps/api: Cloudflare Worker (Hono.js v4+)
 - apps/web: Next.js 15.3 + App Router + Turbopack
 - packages/db: Drizzle ORM v0.44.2 + D1
 - packages/types: Shared TypeScript interfaces
@@ -26,11 +26,12 @@
 - **Types**: UserId, PartnerId, VehicleTypeId, PayloadTypeId, FacilityId
 - **Build Order**: utils→types→db→api
 - **Dependencies**: API+DB packages MUST depend on @treksistem/types
+- **Casting**: Explicit `as UserId` at service boundaries only
 
 ## 2.2 Patterns
 - Symbol branding prevents conflicts
 - Runtime regex + compile-time validation
-- String parsing: `indexOf()/slice()` NOT `split()` 
+- String parsing: `indexOf()/slice()` NOT `split()`
 - Array allocation: `new Array<T>(count)`
 
 # 3. Database
@@ -41,10 +42,18 @@
 - Hoisting: `pnpm add -w drizzle-orm` (peer dependency)
 
 ## 3.2 Schema Patterns
+### Partners Entity
+- Tables: partners (business entity with subscriptions)
+- Fields: publicId(PartnerId), ownerUserId, businessType(UMKM|CORPORATION|INDIVIDUAL), subscriptionTier(BASIC|PREMIUM|ENTERPRISE)
+- Locations: `text().$type<number>()` (lat/lng as numbers stored as text)
+- Audit: createdBy,updatedBy,timestamps + atomic role assignment
+- Indexes: email,registrationNumber,subscriptionTier,ownerId
+
 ### User/Role Model
 - Tables: users + user_roles (RBAC)
 - Roles: MASTER_ADMIN|PARTNER_ADMIN|DRIVER
 - Constraints: Composite unique (userId,role,contextId)
+- Multi-tenant: Partner contextId for scoped permissions
 
 ### Master Data Schema
 - Tables: masterVehicleTypes, masterPayloadTypes, masterFacilities
@@ -58,6 +67,13 @@
 - session_revocations: JTI blacklist
 - audit_logs: Security events + context
 
+## 3.3 Drizzle Integration
+- Import table refs explicitly: `users`, `partners`, `userRoles`
+- Query pattern: `eq(users.publicId, value)` NOT `eq(db.users.publicId, value)`
+- Relations: Bidirectional for type inference
+- Type helpers: `Partner`, `NewPartner` for services
+- Atomic transactions: `db.batch()` for multi-table operations
+
 # 4. Security
 ## 4.1 Auth Stack
 - Google OAuth 2.0 + JWT (hono/jwt, 4hr expiry)
@@ -66,9 +82,11 @@
 
 ## 4.2 RBAC (CRITICAL)
 - **Middleware Order**: Security→JWT→RBAC→Business (NEVER change)
-- Factories: `createJWTMiddleware()`, `requireRole()`, `createMasterDataMiddlewareStack()`
-- Master Admin: Bypasses ALL partner restrictions
+- Factories: `createJWTMiddleware()`, `requireRole()`, `requirePartnerAccess()`
+- Master Admin: Bypasses ALL partner restrictions (check first)
+- Partner Admin: Restricted to own partner context
 - Error Format: `{error:"code", details:"message"}` ALL endpoints
+- Permission validation: Partner ID format before RBAC checks
 
 ## 4.3 Rate Limiting
 - Multi-tier: IP(100/min), Auth(10/min), Email(5failures/hour)
@@ -85,11 +103,21 @@
 
 ## 5.2 Service Patterns
 - Factory: `create*Service(deps)` dependency injection
+- **Context**: Pass complete UserSession objects, NEVER reconstruct auth
 - Errors: Custom classes → HTTP exceptions
 - Transform: Separate DB→API functions
 - Monitoring: All services integrate monitoring
+- Testing: Mock dependencies at injection points
 
-## 5.3 Master Data API
+## 5.3 Partner Management API
+- Routes: `/api/v1/partners` full CRUD + subscription management
+- Service: `createPartnerService(d1,monitoring)`
+- Methods: createPartner(userSession,data), updatePartner(userSession,id,data)
+- Business validation: Email/registration uniqueness before DB
+- Multi-tenant: User can own multiple partners
+- Atomic: Partner creation + role assignment in single transaction
+
+## 5.4 Master Data API
 - Routes: `/api/v1/master-data/{type}` full CRUD
 - Combined: `GET /api/v1/master-data` all types
 - Service: `createMasterDataService(d1,monitoring)`
@@ -114,21 +142,36 @@
 ## 7.1 Framework
 - Vitest v3.2.4 + better-sqlite3 in-memory
 - Commands: `pnpm test:oauth`, `pnpm test:coverage`
-- 50/50 OAuth + 19/19 master data validation tests
 - DB: Complete schema recreation in `test/database/test-db-setup.ts`
 
-## 7.2 Patterns
+## 7.2 Database Testing
+- D1Database vs better-sqlite3: Mock D1Database interface
+- Atomic transactions: `(testDb as any).batch = async (stmts) => { for(const s of stmts) await s; }`
+- Schema alignment: Test DB = production exactly
+- User factory: `createTestUser()` returns `{id,publicId,session}` with roles
+
+## 7.3 Service Testing
+- Context: Pass UserSession objects, not user IDs
+- Mocking: Mock at dependency injection boundaries
+- Isolation: Mock monitoring/external services with minimal interface
+- RBAC: Test both authorized and unauthorized access patterns
+
+## 7.4 Type System Testing
+- Type guards: `error instanceof Error ? error.message : String(error)`
+- Hono validators: `c.req.valid('json' as never)` for type inference issues
+- JWT types: `sign(payload as any, secret)` for UserSession/JWTPayload mismatch
+
+## 7.5 Patterns
 - IP variation (avoid rate limits)
 - `setTimeout(1ms)` timestamp uniqueness
 - Mock isolation between tests
 - Type-first: Test interfaces before runtime
 - Incremental: Types→Schema→Services→Routes→Integration
-- Schema alignment: Test DB = production exactly
 
 # 8. Development
 ## 8.1 Package Placement
 1. Types → packages/types
-2. Schema → packages/db  
+2. Schema → packages/db
 3. UI → packages/ui
 4. API → apps/api
 5. Frontend → apps/web
@@ -149,15 +192,17 @@
 - **Security Order**: Security→JWT→RBAC→Business (NEVER change)
 - **Error Format**: `{error:"code", details:"message"}` ALL endpoints
 - **Partner Query**: `WHERE (partnerId IS NULL OR partnerId = ?)` ALL master data
+- **Service Context**: UserSession objects passed to services, NEVER reconstructed
 - **Audit**: ALL CRUD operations log events
 - **Replication**: Copy existing patterns exactly
 
 ## 9.2 Architecture Rules
 - Branded types: @treksistem/utils single source
 - Middleware: Factory pattern for reusable stacks
-- Services: Explicit dependency injection
+- Services: Explicit dependency injection with complete context
 - Master Admin: Check before partner restrictions
 - Operations: User+role+audit atomic transactions
+- Testing: Mock at injection points, not internal calls
 
 ## 9.3 Tech Debt
 - High: KV rate limiting, crypto library, refresh tokens
@@ -165,7 +210,25 @@
 - Immediate: Workspace dependency verification
 
 # 10. Debugging
+## 10.1 Common Issues
 - TS Errors: Package path conflicts, branded type mismatches
 - Build: Verify workspace deps, check build order
 - Types: Symbol vs string branding conflicts
 - Schema: Test DB must match production exactly
+- "this.client.prepare not function": D1Database interface mismatch
+- "SQLite3 can only bind...": Branded type casting needed
+- "never type": Hono zValidator inference failure
+
+## 10.2 Debugging Process
+- Fix architecture issues first (service dependency injection)
+- Resolve TypeScript compilation errors (branded types, Hono types)
+- Fix database integration (D1Database mocking, atomic transactions)
+- Update test infrastructure (UserSession parameters, service mocking)
+- Validate functionality (RBAC enforcement, business rules)
+- Incremental: One error category at a time
+
+## 10.3 Service Architecture Anti-Patterns
+- **NEVER**: Reconstruct UserSession from userId in services
+- **ALWAYS**: Pass complete UserSession from route handlers
+- **TESTING**: Mock at dependency boundaries, not method calls
+- **CONTEXT**: Services own business logic, routes own auth context

@@ -23,13 +23,9 @@ import { createDb } from '@treksistem/db';
 import { createMasterDataService, MasterDataError } from '../services/master-data.service';
 import { createMonitoringService } from '../services/monitoring.service';
 import {
-  requirePartnerContext,
-  validateMasterDataOperation,
-  validateResourceOwnership,
-  validateMasterDataParams,
   createMasterDataMiddlewareStack,
 } from '../middleware/master-data.middleware';
-import { requireAuth, requireRole, getCurrentUser } from '../middleware/jwt';
+import { getCurrentUser } from '../middleware/jwt';
 import type { UserSession, PartnerId, VehicleTypeId, PayloadTypeId, FacilityId } from '@treksistem/types';
 
 // Environment bindings interface
@@ -197,7 +193,7 @@ export function createMasterDataRouter() {
     ...createMasterDataMiddlewareStack('create'),
     async (c: Context) => {
       try {
-        const data = c.req.valid('json' as never);
+        const data = c.req.valid('json');
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -225,7 +221,7 @@ export function createMasterDataRouter() {
     async (c: Context) => {
       try {
         const id = c.req.param('id') as VehicleTypeId;
-        const data = c.req.valid('json' as never);
+        const data = c.req.valid('json');
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -324,7 +320,7 @@ export function createMasterDataRouter() {
     ...createMasterDataMiddlewareStack('create'),
     async (c: Context) => {
       try {
-        const data = c.req.valid('json' as never);
+        const data = c.req.valid('json');
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -352,7 +348,7 @@ export function createMasterDataRouter() {
     async (c: Context) => {
       try {
         const id = c.req.param('id') as PayloadTypeId;
-        const data = c.req.valid('json' as never);
+        const data = c.req.valid('json');
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -451,7 +447,7 @@ export function createMasterDataRouter() {
     ...createMasterDataMiddlewareStack('create'),
     async (c: Context) => {
       try {
-        const data = c.req.valid('json' as never);
+        const data = c.req.valid('json');
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,
@@ -479,7 +475,7 @@ export function createMasterDataRouter() {
     async (c: Context) => {
       try {
         const id = c.req.param('id') as FacilityId;
-        const data = c.req.valid('json' as never);
+        const data = c.req.valid('json');
         const user = getCurrentUser(c) as UserSession;
         const masterDataService = createMasterDataService(
           c.env.DB,

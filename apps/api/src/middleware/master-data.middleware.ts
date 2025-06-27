@@ -131,7 +131,7 @@ export function validateResourceOwnership(
       const db = createDb(env.DB);
       
       // Check resource ownership based on type
-      let resourceRecord: any = null;
+      let resourceRecord: { partnerId: PartnerId | null } | undefined = undefined;
       
       switch (resourceType) {
         case 'vehicle-types': {
@@ -177,7 +177,7 @@ export function validateResourceOwnership(
 
       // Check ownership: global resources (partnerId = null) are accessible to all
       // Partner resources are only accessible to the owning partner
-      const resourcePartnerId = resourceRecord.partnerId as PartnerId | null;
+      const resourcePartnerId = resourceRecord?.partnerId as PartnerId | null;
       
       if (resourcePartnerId && resourcePartnerId !== userPartnerId) {
         const monitoring = createMonitoringService(db);

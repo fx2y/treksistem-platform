@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { HTTPException } from 'hono/http-exception'
 import { createAuthService } from '../services/auth.service'
-import { createJWTService, extractUserInfo } from '../services/jwt.service'
+import { createJWTService } from '../services/jwt.service'
 import { createMonitoringService } from '../services/monitoring.service'
 import { getSecurityContext, getClientIP } from '../middleware/security'
 import { createDb } from '@treksistem/db'
@@ -310,7 +310,7 @@ export function createAuthRouter() {
       return c.json({
         message: 'Profile endpoint - requires JWT middleware implementation'
       })
-    } catch (error) {
+    } catch {
       const errorResponse: ErrorResponse = {
         error: 'profile_unavailable',
         details: 'Unable to fetch user profile'
@@ -346,7 +346,7 @@ export function createAuthRouter() {
         }
       })
 
-    } catch (error) {
+    } catch {
       return c.json({
         status: 'unhealthy',
         timestamp: Date.now(),
